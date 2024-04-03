@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 
 if (!function_exists('respondSuccess')) {
@@ -21,5 +22,20 @@ if (!function_exists('respondError')) {
             'message' => $message,
             'data' => empty($data) ? null : $data,
         ], $code);
+    }
+}
+
+
+if (!function_exists('validationError')) {
+    function respondValidationError(string $message, $errors = null)
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'status' => false,
+                'status_code' => 422,
+                'message' => $message,
+                'errors' => $errors,
+            ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY)
+        );
     }
 }
