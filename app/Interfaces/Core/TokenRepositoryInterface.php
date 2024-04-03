@@ -23,5 +23,5 @@ interface TokenRepositoryInterface
 
     public function destroyById(string $id);
 
-    public function destroyOwnerTokens(string $user_id);
+    public function destroyUserTokens(string $user_id);
 }
