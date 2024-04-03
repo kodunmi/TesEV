@@ -6,9 +6,6 @@ use App\Interfaces\Core\TokenRepositoryInterface;
 use App\Models\Token;
 use Carbon\Carbon;
 
-use function App\Helpers\Core\generateRandomNumber;
-use function App\Helpers\Core\uuid;
-
 class TokenRepository implements TokenRepositoryInterface
 {
     public function getAll()
@@ -49,8 +46,7 @@ class TokenRepository implements TokenRepositoryInterface
     public function create(array $data)
     {
         $token = new Token;
-        $token->owner_id = $data['owner_id'] ?? null;
-        $token->owner = $data['owner'] ?? null;
+        $token->user_id = $data['user_id'] ?? null;
         $token->token = $data['token'] ?? generateRandomNumber(4);
         $token->purpose = $data['purpose'] ?? null;
         $token->recipient = $data['recipient'] ?? null;
@@ -84,8 +80,8 @@ class TokenRepository implements TokenRepositoryInterface
         return Token::destroy($id);
     }
 
-    public function destroyOwnerTokens(string $owner_id)
+    public function destroyUserTokens(string $user_id)
     {
-        return Token::where('owner_id', $owner_id)->delete();
+        return Token::where('user_id', $user_id)->delete();
     }
 }
