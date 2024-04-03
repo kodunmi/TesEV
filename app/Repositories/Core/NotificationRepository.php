@@ -69,18 +69,18 @@ class NotificationRepository
         return false;
     }
 
-    public function getAllNotifications($owner_id, $per_page = 10)
+    public function getAllNotifications($user_id, $per_page = 10)
     {
-        $notifications = Notification::where('owner_id', $owner_id)->where('show', true)->paginate($per_page);
+        $notifications = Notification::where('user_id', $user_id)->where('show', true)->paginate($per_page);
 
         return $notifications;
     }
 
-    public function notificationCounts($owner_id)
+    public function notificationCounts($user_id)
     {
-        $notifications = Notification::where('owner_id', $owner_id)->where('show', true)->count();
-        $unread_count = Notification::where('owner_id', $owner_id)->where('show', true)->where('is_read', false)->count();
-        $read_count = Notification::where('owner_id', $owner_id)->where('show', true)->where('is_read', true)->count();
+        $notifications = Notification::where('user_id', $user_id)->where('show', true)->count();
+        $unread_count = Notification::where('user_id', $user_id)->where('show', true)->where('is_read', false)->count();
+        $read_count = Notification::where('user_id', $user_id)->where('show', true)->where('is_read', true)->count();
 
         return [
             'all_count' => $notifications,
@@ -89,16 +89,16 @@ class NotificationRepository
         ];
     }
 
-    public function markAllAsRead($owner_id)
+    public function markAllAsRead($user_id)
     {
-        return Notification::where('owner_id', $owner_id)->update([
+        return Notification::where('user_id', $user_id)->update([
             'is_read' => true,
             'read_at' => now(),
         ]);
     }
 
-    public function deleteAll($owner_id)
+    public function deleteAll($user_id)
     {
-        return Notification::where('owner_id', $owner_id)->delete();
+        return Notification::where('user_id', $user_id)->delete();
     }
 }
