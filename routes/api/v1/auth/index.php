@@ -10,6 +10,7 @@ Route::prefix('users')->controller(AuthController::class)->group(function () {
     Route::prefix('register')->group(function () {
         Route::post('/', 'register');
         Route::post('/confirm', 'confirmAccount');
+        Route::post('/token/resent', 'resendConfirmAccountToken');
     });
 
     Route::prefix('password')->group(function () {
