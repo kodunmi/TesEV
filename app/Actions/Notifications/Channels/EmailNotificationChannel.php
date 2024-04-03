@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Actions\Services\Notifications\Channels;
+namespace App\Actions\Notifications\Channels;
+
 
 use App\Mail\SendMailNotification;
 use Illuminate\Support\Facades\Mail;

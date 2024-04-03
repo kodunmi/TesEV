@@ -1,18 +1,16 @@
 <?php
 
-namespace App\Actions\Services\Notifications;
+namespace App\Actions\Notifications;
 
-use App\Actions\Services\Notifications\Channels\EmailNotificationChannel;
-use App\Actions\Services\Notifications\Channels\FirebaseNotificationChannel;
-use App\Actions\Services\Notifications\Channels\SendChampNotificationChannel;
-use App\Actions\Services\Notifications\Channels\TermiiNotificationChannel;
+
+use App\Actions\Notifications\Channels\EmailNotificationChannel;
+use App\Actions\Notifications\Channels\FirebaseNotificationChannel;
 use App\Enum\NotificationTypeEnum as EnumNotificationTypeEnum;
-use App\Enums\Core\Notification\NotificationTypeEnum;
-use App\Enums\Core\Notification\SmsProviderEnum;
 use App\Models\School;
 use App\Models\User;
 use App\Repositories\Core\NotificationRepository;
 use App\Repositories\Core\TokenRepository;
+use App\Repositories\User\UserRepository;
 use Carbon\CarbonImmutable;
 
 class NotificationService
@@ -180,8 +178,7 @@ class NotificationService
         $notifiable = new NotificationRepository();
 
         $notifiable->create([
-            'owner_id' => $this->notifiable?->id ?? null,
-            'owner' => $this->owner ?? null,
+            'user_id' => $this->notifiable?->id ?? null,
             'channel' => 'push_notification',
             'show' => false,
             'title' => $this->title,
@@ -197,7 +194,7 @@ class NotificationService
         return $this;
     }
 
-    public function sendOtp($email = null, $title = 'Use the token to verify your account')
+    public function sendEmailOtp($email = null, $title = 'Use the token to verify your account')
     {
         $token_data = [
             'purpose' => 'Email OTP to ' . $this->notifiable->email . ' @ ' . now(),
@@ -209,9 +206,7 @@ class NotificationService
         $token_repo = new TokenRepository();
         $token = $token_repo->create($token_data);
 
-        $notification = new $this;
-
-        $notification->setSubject($title)
+        $this->setSubject($title)
             ->setView('emails.core.send_token')
             ->setData([
                 'user' => $this->notifiable,
@@ -226,11 +221,31 @@ class NotificationService
         ];
     }
 
-    public function resendOtp($token_id)
+    public function resendEmailOtp($token_id)
     {
         $token_repo = new TokenRepository();
 
         $token = $token_repo->findById($token_id);
+
+        if (!$token) {
+            logError('Invalid token id provided');
+
+            return [
+                'status' => false,
+                'message' => 'We cannot resend token at this time',
+                'data' => null,
+            ];
+        }
+
+        if (!$token->valid) {
+            logError('token is already used');
+
+            return [
+                'status' => false,
+                'message' => 'We cannot resend token at this time',
+                'data' => null,
+            ];
+        }
 
         $creation_time = CarbonImmutable::parse($token->created_at);
         $current_time = CarbonImmutable::now();
@@ -247,13 +262,11 @@ class NotificationService
 
         $token_repo->makeInvalid($token_id);
 
-        return $this->sendOtp();
+        return $this->sendEmailOtp();
     }
 
     public function verifyOtp($token)
     {
-
-
         try {
             $token_repo = new TokenRepository();
 
@@ -305,7 +318,7 @@ class NotificationService
             ]);
 
             if (!$updated) {
-                // logError('SendChamp: Error verifying otp because model not updated', ['data' => $token->toArray(), 'issue' => 'model could not be updated']);
+                logError('Error verifying otp because model not updated', ['data' => $token->toArray(), 'issue' => 'model could not be updated']);
 
                 return [
                     'status' => false,
@@ -317,12 +330,11 @@ class NotificationService
             return [
                 'status' => true,
                 'message' => 'Token verified',
-                'data' => [
-                    'verified_at' => $token_repo->findById($token->id)->verified_at
-                ],
+                'data' => $token
+
             ];
         } catch (\Throwable $th) {
-            // logError('SendChamp: Error verifying otp ' . $th->getMessage(), ['data' => $token->toArray(), 'issue' => $th]);
+            logError('Error verifying otp ' . $th->getMessage(), ['data' => $token->toArray(), 'issue' => $th]);
 
             return [
                 'status' => false,
