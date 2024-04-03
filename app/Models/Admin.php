@@ -2,34 +2,28 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class Admin extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
     use HasUuids, SoftDeletes, HasApiTokens;
 
-    protected $keyType = 'string';
+
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = [
+    public $fillable = [
+        'public_id',
         'first_name',
         'last_name',
-        'email',
-        'phone',
-        'phone_code',
-        'password',
-        'email_verified_at'
+        'email'
     ];
 
     /**
@@ -37,9 +31,10 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $hidden = [
+
+    public $hidden = [
         'password',
-        'remember_token',
+        'remember_token'
     ];
 
     /**
@@ -50,7 +45,6 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
