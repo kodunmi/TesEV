@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -60,5 +61,10 @@ class User extends Authenticatable
     public function compliances(): HasMany
     {
         return $this->hasMany(Compliance::class);
+    }
+
+    public function buildings(): BelongsToMany
+    {
+        return $this->belongsToMany(Building::class);
     }
 }
