@@ -8,15 +8,15 @@ use App\Models\User;
 class UserRepository implements UserInterface
 {
 
-    public function getUsers()
+    public function all()
     {
     }
-    public function getUserById(string $id): User
+    public function findById(string $id): User
     {
         return User::find($id);
     }
 
-    public function getUserByEmail(string $email): User
+    public function findByEmail(string $email): User
     {
         return User::where('email', $email)->first();
     }
@@ -48,7 +48,7 @@ class UserRepository implements UserInterface
     public function updateUser(string $id, array $data): ?User
     {
         try {
-            $user = $this->getUserById($id);
+            $user = $this->findById($id);
 
             $user->first_name = $data['first_name'] ?? $user->first_name;
             $user->last_name = $data['last_name'] ?? $user->last_name;
@@ -73,7 +73,7 @@ class UserRepository implements UserInterface
     public function deleteUser(string $id): bool
     {
         try {
-            $user = $this->getUserById($id);
+            $user = $this->findById($id);
 
             return $user->delete();
 
