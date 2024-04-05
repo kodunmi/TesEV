@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('buildings', function (Blueprint $table) {
             $table->uuid('id')->primary(); // Use UUID as primary key
-
             $table->string('name')->nullable(); // The name of the building
-            $table->string('public_id'); // The public identifier of the building
+            $table->uuid('public_id'); // The public identifier of the building
+            $table->integer('code')->unique(); // The public identifier of the building
             $table->string('address')->nullable(); // The address of the building
             $table->time('opening_time')->nullable(); // The opening time of the building
             $table->time('closing_time')->nullable(); // The closing time of the building

@@ -65,6 +65,6 @@ class User extends Authenticatable
 
     public function buildings(): BelongsToMany
     {
-        return $this->belongsToMany(Building::class);
+        return $this->belongsToMany(Building::class)->using(BuildingUser::class);
     }
 }

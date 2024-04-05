@@ -7,9 +7,20 @@ use App\Models\Building;
 
 class BuildingRepository implements BuildingRepositoryInterface
 {
-    public function all()
+    public function all($search = null)
     {
-        return Building::paginate(10);
+        $query = Building::where('status', 'active');
+
+        if ($search) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('address', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            });
+        }
+
+        return $query->paginate(10);
     }
 
     public function create(array $data): Building
@@ -17,6 +28,7 @@ class BuildingRepository implements BuildingRepositoryInterface
         $building = new Building();
 
         $building->public_id = uuid(); // Generating a UUID for the public identifier
+        $building->code = generateCode(6);
         $building->name = $data['name'] ?? null;
         $building->address = $data['address'] ?? null;
         $building->opening_time = $data['opening_time'] ?? null;
@@ -41,7 +53,6 @@ class BuildingRepository implements BuildingRepositoryInterface
         $building->last_inspection_date = $data['last_inspection_date'] ?? null;
 
         $building->save();
-
 
         return $building;
     }

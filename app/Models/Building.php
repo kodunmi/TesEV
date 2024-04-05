@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Building extends Model
@@ -16,6 +17,7 @@ class Building extends Model
     protected $fillable = [
         'name', // The name of the building
         'public_id', // The public identifier of the building
+        'code',
         'address', // The address of the building
         'opening_time', // The opening time of the building
         'closing_time', // The closing time of the building
@@ -43,6 +45,11 @@ class Building extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class);
+        return $this->belongsToMany(User::class)->using(BuildingUser::class);
+    }
+
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(Vehicle::class);
     }
 }

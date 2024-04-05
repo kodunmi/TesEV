@@ -14,5 +14,5 @@ interface BuildingRepositoryInterface
 
     public function findById($id): ?Building;
 
-    public function all();
+    public function all($search = null);
 }
