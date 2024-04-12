@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Resources\Core\PaginateResource;
+use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -206,5 +209,57 @@ if (!function_exists('decryption')) {
 
             return null;
         }
+    }
+}
+
+if (!function_exists('generateReference')) {
+    function generateReference($length = 57, $type = 'mixed'): string
+    {
+        srand((float) microtime() * 10000000000);
+        $rand = mt_rand(1131671141, 8999992121);
+        $characters = $type == 'mixed'
+            ? strtoupper(str_replace('-', '', uuid()) . ulid() . $rand)
+            : ulid() . $rand;
+
+        return substr(
+            str_shuffle($characters),
+            0,
+            $length
+        );
+    }
+}
+
+
+if (!function_exists('paginateResource')) {
+    function paginateResource($data, $resource)
+    {
+        return PaginateResource::make($data, $resource);
+    }
+}
+
+if (!function_exists('dollarToCent')) {
+    function dollarToCent($amount)
+    {
+        return $amount * 100;
+    }
+}
+
+
+if (!function_exists('calculateMinutesDifference')) {
+    function calculateMinutesDifference($startTime, $endTime)
+    {
+        $start = Carbon::parse($startTime);
+        $end = Carbon::parse($endTime);
+
+        return $end->diffInMinutes($start);
+    }
+}
+if (!function_exists('calculatePercentageOfValue')) {
+    function calculatePercentageOfValue($percentage, $value)
+    {
+        if ($percentage <= 0 || $value <= 0) {
+            return 0;
+        }
+        return ($percentage / 100) * $value;
     }
 }

@@ -233,7 +233,7 @@ class NotificationService
             return [
                 'status' => false,
                 'message' => 'We cannot resend token at this time',
-                'data' => null,
+                'data' => $token,
             ];
         }
 
@@ -243,7 +243,7 @@ class NotificationService
             return [
                 'status' => false,
                 'message' => 'We cannot resend token at this time',
-                'data' => null,
+                'data' => $token,
             ];
         }
 
@@ -256,7 +256,7 @@ class NotificationService
             return [
                 'status' => false,
                 'message' => 'token can only be resent after 1 minute',
-                'data' => $token,
+                'data' => $token
             ];
         }
 

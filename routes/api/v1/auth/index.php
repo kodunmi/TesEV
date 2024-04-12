@@ -15,11 +15,8 @@ Route::prefix('users')->controller(AuthController::class)->group(function () {
 
     Route::prefix('password')->group(function () {
         Route::post('/forget', 'forgetPassword');
+        Route::post('/confirm', 'confirmResetPasswordToken');
         Route::post('/reset', 'resetPassword');
-        Route::prefix('otp')->group(function () {
-            Route::post('/send', 'sendForgetPasswordOtp');
-            Route::post('/resend', 'resendForgetPassword');
-        });
     });
 });
 
