@@ -15,8 +15,7 @@ class SubscriptionTransaction extends Model
 
     protected $fillable = [
         'subscribed_by',
-        'service_id',
-        'subscription_id',
+        'package_id',
         'reference',
         'public_id',
     ];

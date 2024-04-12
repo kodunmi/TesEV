@@ -14,11 +14,9 @@ return new class extends Migration
         Schema::create('subscription_transactions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('subscribed_by')->nullable()->index();
-            $table->foreignUuid('service_id')->nullable()->index();
-            $table->foreignUuid('subscription_id')->nullable()->index();
+            $table->foreignUuid('package_id')->nullable()->index();
             $table->string('reference')->nullable();
             $table->uuid('public_id')->index();
-
             $table->softdeletes();
             $table->timestamps();
         });
