@@ -27,6 +27,9 @@ return new class extends Migration
 
             $table->foreignUuid('parent_trip_id')->nullable();
 
+            $table->integer('tax_amount');
+            $table->integer('tax_percentage');
+
             $table->timestamps();
             $table->softDeletes();
         });

@@ -60,4 +60,9 @@ class TripRepository implements TripRepositoryInterface
         }
         return false;
     }
+
+    public function query()
+    {
+        return Trip::query();
+    }
 }

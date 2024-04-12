@@ -23,7 +23,9 @@ class Trip extends Model
         'end_time',
         'public_id',
         'booking_id',
-        'parent_trip_id'
+        'parent_trip_id',
+        'tax_amount',
+        'tax_percentage'
     ];
 
     public function user(): BelongsTo
@@ -49,5 +51,10 @@ class Trip extends Model
     public function tripMetaData(): HasOne
     {
         return $this->hasOne(TripMetaData::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 }
