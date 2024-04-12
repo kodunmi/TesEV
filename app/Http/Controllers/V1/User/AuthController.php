@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\V1\User;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\ConfirmAccountRequest;
-use App\Http\Requests\User\LoginRequest;
-use App\Http\Requests\User\RegisterRequest;
-use App\Http\Requests\User\ResendConfirmAccountTokenRequest;
+use App\Http\Requests\Auth\ConfirmAccountRequest;
+use App\Http\Requests\Auth\ForgetPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendConfirmAccountTokenRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Services\User\UserAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -85,27 +87,56 @@ class AuthController extends Controller
 
         $resend_confirm_account_token = $this->userAuthService->resendConfirmAccountToken($data);
 
+        $data = [
+            "token_id" => $resend_confirm_account_token['data']->id
+        ];
+
         if ($resend_confirm_account_token['status']) {
-            return respondSuccess($resend_confirm_account_token['message'], $resend_confirm_account_token['data']);
+            return respondSuccess($resend_confirm_account_token['message'], $data);
         }
 
-        return respondError($resend_confirm_account_token['message'], data: null, code: 400);
+        return respondError($resend_confirm_account_token['message'], data: $data, code: 400);
     }
 
-    public function forgetPassword()
+    public function forgetPassword(ForgetPasswordRequest $request)
     {
+        $validated = (object) $request->validated();
+
+
+        $register = $this->userAuthService->forgetPasswordRequest($validated->email);
+
+
+        if ($register['status']) {
+            return respondSuccess("Please use the OTP to change password", $register['data']);
+        }
+
+        return respondError($register['message'], data: null, code: 400);
     }
 
-    public function resetPassword()
+
+    public function confirmResetPasswordToken(ConfirmAccountRequest $request)
     {
+        $validated = (object) $request->validated();
+
+        $confirm_reset_password_token = $this->userAuthService->confirmResetPasswordToken($validated->token);
+
+        if ($confirm_reset_password_token['status']) {
+            return respondSuccess($confirm_reset_password_token['message'], $confirm_reset_password_token['data']);
+        }
+
+        return respondError($confirm_reset_password_token['message'], data: null, code: 400);
     }
 
-
-    public function resendForgetPassword()
+    public function resetPassword(ResetPasswordRequest $request)
     {
-    }
+        $validated = (object) $request->validated();
 
-    public function sendForgetPasswordOtp()
-    {
+        $reset_password = $this->userAuthService->changePassword($validated->password);
+
+        if ($reset_password['status']) {
+            return respondSuccess($reset_password['message'], $reset_password['data']);
+        }
+
+        return respondError($reset_password['message'], data: null, code: 400);
     }
 }

@@ -20,7 +20,22 @@ class UserAuthService
     public function login($credentials)
     {
 
-        $user = $this->userRepository->getUserByEmail($credentials['email']);
+        $user = $this->userRepository->findByEmail($credentials['email']);
+
+        if (!$user->email_verified_at) {
+
+            $notification = new NotificationService($user);
+
+            $data = $notification->sendEmailOtp();
+
+            return [
+                'status' => false,
+                'message' => 'Email not verified, please check you email for token',
+                'data' => [
+                    'token_id' => $data['data']->id
+                ]
+            ];
+        }
 
 
         if ($user || !Hash::check($credentials['password'], $user->password)) {
@@ -81,7 +96,9 @@ class UserAuthService
 
         $email = $verify_token['data']->recipient;
 
-        $user = $this->userRepository->getUserByEmail($email);
+        $user = $this->userRepository->findByEmail($email);
+
+        $token = $user->createToken('authToken')->plainTextToken;
 
         if ($user->email_verified_at) {
             return [
@@ -95,6 +112,8 @@ class UserAuthService
             'email_verified_at' => now()
         ]);
 
+
+
         if (!$update) {
             return [
                 'status' => false,
@@ -105,8 +124,10 @@ class UserAuthService
 
         return [
             'status' => true,
-            'message' => "Email verified successfully, proceed to login",
-            'data' => $user
+            'message' => "Email verified successfully",
+            'data' =>  [
+                'token' => $token
+            ]
         ];
     }
 
@@ -117,7 +138,7 @@ class UserAuthService
 
         $email = $token->recipient;
 
-        $user = $this->userRepository->getUserByEmail($email);
+        $user = $this->userRepository->findByEmail($email);
 
         $notification = new NotificationService($user);
 
@@ -128,5 +149,81 @@ class UserAuthService
         }
 
         return $resend_verify_token;
+    }
+
+    public function forgetPasswordRequest($email)
+    {
+        $user = $this->userRepository->findByEmail($email);
+
+        if (!$user) {
+            return [
+                'status' => false,
+                'message' => "User with the email not found",
+                'data' => null
+            ];
+        }
+
+        $notification = new NotificationService($user);
+
+        $data = $notification->sendEmailOtp(title: "Please use the OTP to change your password");
+
+        return [
+            'status' => true,
+            'message' => $data['message'],
+            'data' => [
+                'token_id' => $data['data']->id
+            ]
+        ];
+    }
+
+    public function confirmResetPasswordToken($token)
+    {
+        $notification = new NotificationService();
+
+        $verify_token = $notification->verifyOtp($token);
+
+
+
+        if (!$verify_token['status']) {
+            return $verify_token;
+        }
+
+        $email = $verify_token['data']->recipient;
+
+        $user = $this->userRepository->findByEmail($email);
+
+
+        $token = $user->createToken('authToken')->plainTextToken;
+
+        return [
+            "status" => true,
+            "message" => "OTP verified successfully",
+            "data" => $token
+        ];
+    }
+
+    public function changePassword($password)
+    {
+        $update = $this->userRepository->updateUser(auth()->id(), [
+            'password' => $password
+        ]);
+
+        if (!$update) {
+            return [
+                "status" => false,
+                "message" => "We could not update your password at this time, please try again",
+                "data" => null
+            ];
+        }
+
+        $user = $this->userRepository->findById(auth()->id());
+
+        $user->tokens()->delete();
+
+        return [
+            "status" => true,
+            "message" => "Password updated successfully, please login",
+            "data" => null
+        ];
     }
 }
