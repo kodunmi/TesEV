@@ -3,6 +3,8 @@
 namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Contracts\Validation\Validator;
 
 class AddBuildingRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class AddBuildingRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,5 +26,13 @@ class AddBuildingRequest extends FormRequest
         return [
             'building_id' => ['required', 'exists:buildings,id']
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        $message = 'Invalid input entered';
+        $errors = (new ValidationException($validator))->errors();
+
+        return respondValidationError($message, $errors);
     }
 }
