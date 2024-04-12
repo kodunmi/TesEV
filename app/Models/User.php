@@ -31,7 +31,8 @@ class User extends Authenticatable
         'phone',
         'phone_code',
         'password',
-        'email_verified_at'
+        'email_verified_at',
+        'wallet'
     ];
 
     /**
@@ -66,5 +67,87 @@ class User extends Authenticatable
     public function buildings(): BelongsToMany
     {
         return $this->belongsToMany(Building::class)->using(BuildingUser::class);
+    }
+
+    public function trips(): HasMany
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+
+    public function reports()
+    {
+        return $this->hasManyThrough(Report::class, Trip::class);
+    }
+
+    public function subscriptions(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class)->using(PackageUser::class)
+            ->as('subscription')
+            ->withTimestamps()
+            ->withPivot([
+                'id',
+                'subscribed_at',
+                'due_at',
+                'unsubscribed_at',
+                'balance'
+            ])
+            ->wherePivotNull('unsubscribed_at');
+    }
+
+    public function activeSubscriptions(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class)
+            ->using(PackageUser::class)
+            ->as('subscription')
+            ->withTimestamps()
+            ->withPivot([
+                'id',
+                'subscribed_at',
+                'due_at',
+                'unsubscribed_at',
+                'balance',
+            ])
+            ->wherePivot('due_at', '>', now())
+            ->wherePivotNull('unsubscribed_at');
+    }
+
+    public function unsubscribeSubscriptions(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class)
+            ->using(PackageUser::class)
+            ->as('subscription')
+            ->withTimestamps()
+            ->withPivot([
+                'id',
+                'subscribed_at',
+                'due_at',
+                'unsubscribed_at',
+                'frequency',
+                'auto_renew',
+                'payment_mode',
+                'balance'
+            ])
+            ->wherePivotNotNull('unsubscribed_at');
+    }
+
+    public function expiredSubscriptions(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class)
+            ->using(PackageUser::class)
+            ->as('subscription')
+            ->withTimestamps()
+            ->withPivot([
+                'id',
+                'subscribed_at',
+                'due_at',
+                'unsubscribed_at',
+                'frequency',
+                'auto_renew',
+                'payment_mode',
+                'balance'
+            ])
+            ->wherePivot('due_at', '<', now()->toDateTimeString())
+            ->wherePivotNull('unsubscribed_at');
     }
 }

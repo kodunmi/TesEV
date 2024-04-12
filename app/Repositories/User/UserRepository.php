@@ -57,6 +57,7 @@ class UserRepository implements UserInterface
             $user->phone_code = $data['phone_code'] ?? $user->phone_code;
             $user->pin = $data['pin'] ?? $user->pin;
             $user->gender = $data['gender'] ?? $user->gender;
+            $user->wallet = $data['wallet'] ?? $user->wallet;
             $user->status = $data['status'] ?? $user->status;
             $user->date_of_birth = $data['date_of_birth'] ?? $user->date_of_birth;
             $user->password = isset($data['password']) ? hashData($data['password'])  : $user->password;
@@ -66,6 +67,7 @@ class UserRepository implements UserInterface
 
             return $user;
         } catch (\Throwable $th) {
+            logError($th->getMessage());
             return null;
         }
     }
