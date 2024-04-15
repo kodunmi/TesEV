@@ -12,7 +12,7 @@ ENV REAL_IP_HEADER 1
 # Laravel config
 ENV APP_ENV development
 ENV APP_DEBUG true
-ENV LOG_CHANNEL stack
+ENV LOG_CHANNEL stderr
 
 # Allow composer to run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
