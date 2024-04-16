@@ -22,6 +22,14 @@ class UserAuthService
 
         $user = $this->userRepository->findByEmail($credentials['email']);
 
+        if (!$user) {
+            return [
+                'status' => false,
+                'message' => 'Email or password not correct',
+                'data' => null
+            ];
+        }
+
         if (!$user->email_verified_at) {
 
             $notification = new NotificationService($user);

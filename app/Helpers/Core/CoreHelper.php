@@ -263,3 +263,10 @@ if (!function_exists('calculatePercentageOfValue')) {
         return ($percentage / 100) * $value;
     }
 }
+
+if (!function_exists('pricePerHourToPricePerMinute')) {
+    function pricePerHourToPricePerMinute($price)
+    {
+        return $price / 60;
+    }
+}
