@@ -30,6 +30,8 @@ return new class extends Migration
             $table->integer('tax_amount');
             $table->integer('tax_percentage');
 
+            $table->boolean('status')->default(false);
+
             $table->timestamps();
             $table->softDeletes();
         });
