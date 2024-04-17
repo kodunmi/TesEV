@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Building;
+use App\Models\Vehicle;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -26,5 +28,18 @@ class BuildingFactory extends Factory
             'image' => uuid(), // The image URL or path of the building
             'code' => generateCode(6)
         ];
+    }
+
+    /**
+     * Configure the model factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Building $building) {
+            // ...
+        })->afterCreating(function (Building $building) {
+
+            Vehicle::factory()->count(5)->for($building, 'building')->create();
+        });
     }
 }

@@ -15,19 +15,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'first_name' => 'Lekan',
-            'last_name' => 'Kodunmi',
-            'email' => fake()->email(),
-        ]);
-
-        Building::factory()->count(10)->create();
-
-
-        Vehicle::factory()->count(40)->create();
-
         $this->call([
-            PackageSeeder::class
+            PackageSeeder::class,
+            GeneralSeeder::class
         ]);
     }
 }
