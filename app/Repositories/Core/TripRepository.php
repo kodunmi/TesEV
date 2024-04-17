@@ -25,6 +25,7 @@ class TripRepository implements TripRepositoryInterface
         $trip->start_time = $data['start_time'] ?? null;
         $trip->end_time = $data['end_time'] ?? null;
         $trip->parent_trip_id = $data['parent_trip_id'] ?? null;
+        $trip->status = $data['status'] ?? false;
 
         $trip->public_id = uuid();
         $trip->booking_id = generateRandomNumber(10);
