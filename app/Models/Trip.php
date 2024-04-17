@@ -25,7 +25,8 @@ class Trip extends Model
         'booking_id',
         'parent_trip_id',
         'tax_amount',
-        'tax_percentage'
+        'tax_percentage',
+        'status'
     ];
 
     public function user(): BelongsTo
