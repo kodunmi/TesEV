@@ -15,10 +15,17 @@ class GeneralSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'first_name' => 'Lekan',
-            'last_name' => 'Kodunmi',
-            'email' => 'lekan126@gmail.com',
+        User::factory()->createMany([
+            [
+                'first_name' => 'Lekan',
+                'last_name' => 'Kodunmi',
+                'email' => 'lekan126@gmail.com',
+            ],
+            [
+                'first_name' => 'Muyiwa',
+                'last_name' => 'Emmanuel',
+                'email' => 'emmanuelmuyiwa19@gmail.com',
+            ]
         ]);
 
         Building::factory()->count(10)->create();
