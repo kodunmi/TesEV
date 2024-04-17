@@ -18,7 +18,7 @@ class GeneralSeeder extends Seeder
         User::factory()->create([
             'first_name' => 'Lekan',
             'last_name' => 'Kodunmi',
-            'email' => fake()->email(),
+            'email' => 'lekan126@gmail.com',
         ]);
 
         Building::factory()->count(10)->create();
