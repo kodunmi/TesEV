@@ -18,6 +18,7 @@ use App\Repositories\Core\TransactionRepository;
 use App\Repositories\Core\TripRepository;
 use App\Repositories\Core\VehicleRepository;
 use App\Repositories\User\UserRepository;
+use App\Services\Core\TripService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +30,8 @@ class TripController extends Controller
         protected VehicleRepository $vehicleRepository,
         protected UserRepository $userRepository,
         protected ReportRepository $reportRepository,
-        protected CloudService $cloudService
+        protected CloudService $cloudService,
+        protected TripService $tripService
     ) {
     }
 
@@ -47,74 +49,18 @@ class TripController extends Controller
 
         $validated = (object) $request->validated();
 
-        $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
+        $response = $this->tripService->getTripCosting($validated);
 
-        $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
-
-        $price_per_minute = $vehicle->price_per_hour / 60;
-
-        $total_amount = $mins_difference * $price_per_minute;
-
-        $user = $this->userRepository->findById(auth()->id());
-
-        $active_subscription = $user->activeSubscriptions()->first();
-
-        $settings = TripSetting::first();
-
-
-        if ($active_subscription) {
-
-            $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
-
-            if ($active_subscription->subscription->balance < $total_amount) {
-
-                $outstanding_after_subscription_balance_deduction = $total_amount - $active_subscription->subscription->balance;
-
-                $data = [
-                    'vehicle' => $vehicle,
-                    'hours' => $mins_difference / 60,
-                    'amount' => $total_amount / 60,
-                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
-                    'payment_type' =>  TripPaymentTypeEnum::SUBSCRIPTION->value,
-                    'has_outstanding' => $outstanding_after_subscription_balance_deduction > 0,
-                    'outstanding' => $outstanding_after_subscription_balance_deduction,
-                    'choose_payment_type_to_cover_outstanding' => $outstanding_after_subscription_balance_deduction > 0,
-                    'wallet_amount' => $user->wallet
-                ];
-            } else {
-
-                $data = [
-                    'vehicle' => $vehicle,
-                    'hours' => $mins_difference / 60,
-                    'amount' => $total_amount / 60,
-                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
-                    'payment_type' =>  TripPaymentTypeEnum::SUBSCRIPTION->value,
-                    'has_outstanding' => false,
-                    'outstanding' => 0,
-                    'choose_payment_type_to_cover_outstanding' => false,
-                    'wallet_amount' => $user->wallet
-                ];
-            }
-        } else {
-
-            $data = [
-                'vehicle' => $vehicle,
-                'hours' => $mins_difference / 60,
-                'amount' => $total_amount / 60,
-                'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
-                'payment_type' =>  TripPaymentTypeEnum::OTHERS->value,
-                'has_outstanding' => false,
-                'outstanding' => 0,
-                'choose_payment_type_to_cover_outstanding' => false,
-                'wallet_amount' => $user->wallet
-            ];
+        if (!$response['status']) {
+            return respondError('Error costing trip');
         }
 
-        return respondSuccess('trip costing fetched', $data);
+        return respondSuccess($response['message'], $response['data']);
     }
 
     public function createTrip(CreateTripRequest $request)
     {
+
         $validated = (object) $request->validated();
 
         $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
@@ -228,74 +174,74 @@ class TripController extends Controller
         $payment->transaction()->save($transaction);
     }
 
-    public function getTripCost(CreateTripRequest $request)
-    {
-        $validated = (object) $request->validated();
+    // public function getTripCost(CreateTripRequest $request)
+    // {
+    //     $validated = (object) $request->validated();
 
-        $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
+    //     $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
 
-        // $price_per_minute = $vehicle->price_per_hour / 60;
+    //     // $price_per_minute = $vehicle->price_per_hour / 60;
 
-        $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
-
-
-        // $total_amount = $mins_difference * $price_per_minute;
+    //     $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
 
 
-        $user = $this->userRepository->findById(auth()->id());
-
-        $active_subscription = $user->activeSubscriptions()->first();
-
-        $settings = TripSetting::first();
+    //     // $total_amount = $mins_difference * $price_per_minute;
 
 
-        // $tax_amount = calculatePercentageOfValue($settings->tax_percentage, $total_amount);
+    //     $user = $this->userRepository->findById(auth()->id());
 
-        if ($active_subscription) {
+    //     $active_subscription = $user->activeSubscriptions()->first();
 
-            $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
-
-            if ($active_subscription->subscription->balance < $total_amount) {
-
-                return respondSuccess("Choose channel pay outstanding");
+    //     $settings = TripSetting::first();
 
 
+    //     // $tax_amount = calculatePercentageOfValue($settings->tax_percentage, $total_amount);
 
-                // return respondError("You do not have enough in your subscription to cover fare");
-            }
-        } else {
-            // return respondSuccess("User can book ride", [
-            //     'can_book' => true,
-            //     'amount'
-            //     'outstanding'=> 0
-            // ]);
-        }
+    //     if ($active_subscription) {
+
+    //         $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
+
+    //         if ($active_subscription->subscription->balance < $total_amount) {
+
+    //             return respondSuccess("Choose channel pay outstanding");
 
 
+
+    //             // return respondError("You do not have enough in your subscription to cover fare");
+    //         }
+    //     } else {
+    //         // return respondSuccess("User can book ride", [
+    //         //     'can_book' => true,
+    //         //     'amount'
+    //         //     'outstanding'=> 0
+    //         // ]);
+    //     }
 
 
 
 
 
-        // calculate amount based on the vehicle
 
-        // check if user has subscription
 
-        // check if they has any unit left
+    //     // calculate amount based on the vehicle
 
-        // check if unit will cover ride
+    //     // check if user has subscription
 
-        // tell them the amount the unit can cover
+    //     // check if they has any unit left
 
-        // if
+    //     // check if unit will cover ride
 
-        $trip = $this->tripRepository->create([
-            'user_id' => auth()->id(),
-            'vehicle_id' => $validated->vehicle_id,
-            'start_time' => $validated->start_time,
-            'end_time' => $validated->end_time,
-        ]);
-    }
+    //     // tell them the amount the unit can cover
+
+    //     // if
+
+    //     $trip = $this->tripRepository->create([
+    //         'user_id' => auth()->id(),
+    //         'vehicle_id' => $validated->vehicle_id,
+    //         'start_time' => $validated->start_time,
+    //         'end_time' => $validated->end_time,
+    //     ]);
+    // }
 
     public function addExtraTime()
     {
@@ -317,52 +263,12 @@ class TripController extends Controller
     {
         $validated = (object) $request->validated();
 
-        DB::beginTransaction();
+        $response = $this->tripService->reportTrip($validated);
 
-        try {
-
-            $created = $this->reportRepository->create([
-                'trip_id' => $validated->trip_id,
-                'description' => $validated->description,
-                'type' => $validated->type,
-            ]);
-
-            foreach ($validated->images as $image) {
-                $file_upload = $this->cloudService->upload(
-                    file: $image,
-                    provider: CloudTypeEnum::CLOUDINARY,
-                    folder: 'reports',
-                    owner_id: $created->id,
-                    name: "report-for-trip" . $validated->trip_id,
-                    type: 'reports',
-                    extension: $image->getClientOriginalExtension()
-                );
-
-                if (!$file_upload['status']) {
-                    DB::rollBack();
-                    return [
-                        'status' => false,
-                        'message' =>  "Error uploading image",
-                        'data' => null
-                    ];
-                }
-            }
-
-            DB::commit();
-
-            return [
-                'status' => true,
-                'message' => 'Report sent successfully, awaiting review',
-                'data' => null
-            ];
-        } catch (\Throwable $th) {
-            logError($th->getMessage());
-            DB::rollBack();
-            return [
-                'status' => false,
-                'message' => 'An error occurred during reporting',
-                'data' => null
-            ];
+        if (!$response['status']) {
+            return respondError($response['message']);
         }
+
+        return respondSuccess($response['message'], $response['data']);
     }
 }
