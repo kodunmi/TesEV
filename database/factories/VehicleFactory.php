@@ -27,6 +27,7 @@ class VehicleFactory extends Factory
                 'https://res.cloudinary.com/bikievents/image/upload/v1712600660/image_10_pcexwp.png',
                 'https://res.cloudinary.com/bikievents/image/upload/v1712600660/image_9_haqnhv.png'
             ]),
+            'plate_number' => generateRandomNumber(10),
             'building_id' => Building::all()->random(),
             'public_id' => uuid(),
         ];

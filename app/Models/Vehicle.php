@@ -20,6 +20,7 @@ class Vehicle extends Model
         'status',
         'price_per_hour',
         'image',
+        'plate_number',
         'building_id',
         'public_id',
 

@@ -35,6 +35,7 @@ class VehicleRepository implements VehicleRepositoryInterface
         $vehicle->status = $data['status'] ?? null;
         $vehicle->price_per_hour = $data['price_per_hour'] ?? null;
         $vehicle->image = $data['image'] ?? null;
+        $vehicle->plate_number = $data['plate_number'] ?? null;
         $vehicle->battery_capacity = $data['battery_capacity'] ?? null;
         $vehicle->charging_time = $data['charging_time'] ?? null;
         $vehicle->range = $data['range'] ?? null;
@@ -65,6 +66,7 @@ class VehicleRepository implements VehicleRepositoryInterface
         $vehicle->status = $data['status'] ?? $vehicle->status;
         $vehicle->price_per_hour = $data['price_per_hour'] ?? $vehicle->price_per_hour;
         $vehicle->image = $data['image'] ?? $vehicle->image;
+        $vehicle->plate_number = $data['plate_number'] ?? $vehicle->plate_number;
         $vehicle->battery_capacity = $data['battery_capacity'] ?? $vehicle->battery_capacity;
         $vehicle->charging_time = $data['charging_time'] ?? $vehicle->charging_time;
         $vehicle->range = $data['range'] ?? $vehicle->range;

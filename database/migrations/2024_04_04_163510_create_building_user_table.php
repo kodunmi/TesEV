@@ -15,6 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('building_id');
             $table->foreignUuid('user_id');
+            $table->boolean('status')->default(false);
             $table->timestamps();
         });
     }

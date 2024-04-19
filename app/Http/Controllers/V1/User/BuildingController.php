@@ -8,6 +8,7 @@ use App\Http\Requests\User\GetAvailableVehiclesForBuilding;
 use App\Http\Resources\Core\BuildingResource;
 use App\Http\Resources\Core\PaginateResource;
 use App\Http\Resources\Core\VehicleResource;
+use App\Http\Resources\User\UserBuildingResource;
 use App\Repositories\Core\BuildingRepository;
 use App\Repositories\Core\TripRepository;
 use App\Repositories\User\UserRepository;
@@ -38,7 +39,7 @@ class BuildingController extends Controller
 
             $user->buildings()->attach($building->id);
 
-            return respondSuccess('Building added successfully', new BuildingResource($building));
+            return respondSuccess('Building added successfully', new UserBuildingResource($building));
         } catch (\Throwable $th) {
             logError($th->getMessage());
             return respondError('Error adding building', null, 400);
@@ -57,7 +58,7 @@ class BuildingController extends Controller
 
             $user->buildings()->detach($building->id);
 
-            return respondSuccess('Building removed successfully', new BuildingResource($building));
+            return respondSuccess('Building removed successfully', new UserBuildingResource($building));
         } catch (\Throwable $th) {
             return respondError('Error removing building', null, 400);
         }
@@ -69,7 +70,7 @@ class BuildingController extends Controller
 
         $buildings = $user->buildings()->paginate(10);
 
-        return respondSuccess('Building fetched successfully', PaginateResource($buildings, BuildingResource::class));
+        return respondSuccess('Building fetched successfully', PaginateResource($buildings, UserBuildingResource::class));
     }
 
     public function getAllAvailableBuildings(Request $request)

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('status')->nullable();
             $table->decimal('price_per_hour', 10, 2)->nullable();
             $table->string('image')->nullable();
+            $table->string('plate_number')->nullable();
             $table->foreignUuid('building_id');
             $table->uuid('public_id');
             // Additional fields for the EV model
