@@ -35,6 +35,7 @@ class UserRepository implements UserInterface
             $user->status = $data['status'] ?? 'pending'; // default to 'pending' if not provided
             $user->date_of_birth = $data['date_of_birth'] ?? null;
             $user->password = $data['password'] ?? null;
+            $user->customer_id = $data['customer_id'] ?? null;
 
             $user->save();
 
@@ -62,6 +63,7 @@ class UserRepository implements UserInterface
             $user->date_of_birth = $data['date_of_birth'] ?? $user->date_of_birth;
             $user->password = isset($data['password']) ? hashData($data['password'])  : $user->password;
             $user->email_verified_at = $data['email_verified_at'] ?? $user->email_verified_at;
+            $user->customer_id = $data['customer_id'] ?? $user->customer_id;
 
             $user->save();
 
