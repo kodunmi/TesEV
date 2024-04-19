@@ -39,7 +39,7 @@ class BuildingController extends Controller
 
             $user->buildings()->attach($building->id);
 
-            return respondSuccess('Building added successfully', new UserBuildingResource($building));
+            return respondSuccess('Building added successfully', new BuildingResource($building));
         } catch (\Throwable $th) {
             logError($th->getMessage());
             return respondError('Error adding building', null, 400);
@@ -58,7 +58,7 @@ class BuildingController extends Controller
 
             $user->buildings()->detach($building->id);
 
-            return respondSuccess('Building removed successfully', new UserBuildingResource($building));
+            return respondSuccess('Building removed successfully', new BuildingResource($building));
         } catch (\Throwable $th) {
             return respondError('Error removing building', null, 400);
         }
