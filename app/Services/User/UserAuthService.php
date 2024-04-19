@@ -3,6 +3,7 @@
 namespace App\Services\User;
 
 use App\Actions\Notifications\NotificationService;
+use App\Actions\Payment\StripeService;
 use App\Repositories\Core\TokenRepository;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,8 @@ class UserAuthService
 
     public function __construct(
         protected UserRepository $userRepository,
-        protected TokenRepository $tokenRepository
+        protected TokenRepository $tokenRepository,
+        protected StripeService $stripeService
     ) {
     }
 
@@ -94,6 +96,7 @@ class UserAuthService
 
     public function confirmAccount(array $data)
     {
+
         $notification = new NotificationService();
 
         $verify_token = $notification->verifyOtp($data['token']);
@@ -116,11 +119,19 @@ class UserAuthService
             ];
         }
 
+        // create stripe customer
+        $stripe_data = [
+            'name' => $user->first_name . ' ' . $user->last_name,
+            'email' => $user->email,
+            'phone' => $user->phone
+        ];
+
+        $response = $this->stripeService->createCustomer($stripe_data);
+
         $update = $this->userRepository->updateUser($user->id, [
-            'email_verified_at' => now()
+            'email_verified_at' => now(),
+            'customer_id' => $response['data']->id
         ]);
-
-
 
         if (!$update) {
             return [
