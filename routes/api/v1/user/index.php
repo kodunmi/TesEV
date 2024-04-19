@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\V1\User\BuildingController;
+use App\Http\Controllers\V1\User\CardController;
 use App\Http\Controllers\V1\User\ComplianceController;
 use App\Http\Controllers\V1\User\SubscriptionController;
 use App\Http\Controllers\V1\User\TripController;
@@ -49,4 +50,10 @@ Route::prefix('trips')->controller(TripController::class)->group(function () {
         Route::post('/add', 'addExtraTime');
         Route::post('/report', 'reportTrip');
     });
+});
+
+Route::prefix('cards')->controller(CardController::class)->group(function () {
+    Route::post('/', 'addCard');
+    Route::get('/', 'getCards');
+    Route::get('/default', 'getDefaultCard');
 });
