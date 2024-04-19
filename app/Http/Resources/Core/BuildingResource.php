@@ -24,7 +24,6 @@ class BuildingResource extends JsonResource
             'status' => $this->status,
             'image' => $this->image,
             'vehicle_count' => $this->vehicles()->count(),
-            'status' => $this->pivot->status
         ];
     }
 }
