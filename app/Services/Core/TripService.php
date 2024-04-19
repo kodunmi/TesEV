@@ -27,7 +27,7 @@ class TripService
 
         $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
 
-        $price_per_minute = $vehicle->price_per_hour / 60;
+        $price_per_minute = $vehicle->price_per_hour * 60;
 
         $total_amount = $mins_difference * $price_per_minute;
 
@@ -50,7 +50,7 @@ class TripService
                     'vehicle' => new VehicleResource($vehicle),
                     'hours' => $mins_difference / 60,
                     'amount' => $total_amount / 60,
-                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
+                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount / 60),
                     'payment_type' =>  TripPaymentTypeEnum::SUBSCRIPTION->value,
                     'has_outstanding' => $outstanding_after_subscription_balance_deduction > 0,
                     'outstanding' => $outstanding_after_subscription_balance_deduction,
@@ -63,7 +63,7 @@ class TripService
                     'vehicle' => new VehicleResource($vehicle),
                     'hours' => $mins_difference / 60,
                     'amount' => $total_amount / 60,
-                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
+                    'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount / 60),
                     'payment_type' =>  TripPaymentTypeEnum::SUBSCRIPTION->value,
                     'has_outstanding' => false,
                     'outstanding' => 0,
@@ -77,7 +77,7 @@ class TripService
                 'vehicle' => new VehicleResource($vehicle),
                 'hours' => $mins_difference / 60,
                 'amount' => $total_amount / 60,
-                'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount),
+                'tax' => calculatePercentageOfValue($settings->tax_percentage, $total_amount / 60),
                 'payment_type' =>  TripPaymentTypeEnum::OTHERS->value,
                 'has_outstanding' => false,
                 'outstanding' => 0,

@@ -33,7 +33,7 @@ class BuildingController extends Controller
             $building = $this->buildingRepository->findById($validated->building_id);
 
             if ($user->buildings()->find($building)) {
-                return respondError('Building already adding', null, 400);
+                return respondError('Building already added', null, 400);
             }
 
             $user->buildings()->attach($building->id);

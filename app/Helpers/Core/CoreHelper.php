@@ -251,7 +251,7 @@ if (!function_exists('calculateMinutesDifference')) {
         $start = Carbon::parse($startTime);
         $end = Carbon::parse($endTime);
 
-        return $end->diffInMinutes($start);
+        return  $start->diffInMinutes($end);
     }
 }
 if (!function_exists('calculatePercentageOfValue')) {
