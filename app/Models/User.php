@@ -32,7 +32,8 @@ class User extends Authenticatable
         'phone_code',
         'password',
         'email_verified_at',
-        'wallet'
+        'wallet',
+        'customer_id'
     ];
 
     /**
@@ -149,5 +150,10 @@ class User extends Authenticatable
             ])
             ->wherePivot('due_at', '<', now()->toDateTimeString())
             ->wherePivotNull('unsubscribed_at');
+    }
+
+    public function cards(): HasMany
+    {
+        return $this->hasMany(Card::class);
     }
 }
