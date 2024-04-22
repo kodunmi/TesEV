@@ -265,12 +265,12 @@ class NotificationService
         return $this->sendEmailOtp();
     }
 
-    public function verifyOtp($token)
+    public function verifyOtp($token, $token_id)
     {
         try {
             $token_repo = new TokenRepository();
 
-            $token = $token_repo->findByToken($token);
+            $token = $token_repo->findByTokenAndId($token, $token_id);
 
             if (!$token) {
                 return [

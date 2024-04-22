@@ -66,6 +66,7 @@ class AuthController extends Controller
 
         $data = [
             'token' => $validated->token,
+            'token_id' => $validated->token_id
         ];
 
         $confirm_account = $this->userAuthService->confirmAccount($data);
@@ -118,10 +119,12 @@ class AuthController extends Controller
     {
         $validated = (object) $request->validated();
 
-        $confirm_reset_password_token = $this->userAuthService->confirmResetPasswordToken($validated->token);
+        $confirm_reset_password_token = $this->userAuthService->confirmResetPasswordToken($validated->token, $validated->token_id);
 
         if ($confirm_reset_password_token['status']) {
-            return respondSuccess($confirm_reset_password_token['message'], $confirm_reset_password_token['data']);
+            return respondSuccess($confirm_reset_password_token['message'], [
+                'token' =>  $confirm_reset_password_token['data']
+            ]);
         }
 
         return respondError($confirm_reset_password_token['message'], data: null, code: 400);

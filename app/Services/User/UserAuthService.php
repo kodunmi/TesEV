@@ -99,7 +99,7 @@ class UserAuthService
 
         $notification = new NotificationService();
 
-        $verify_token = $notification->verifyOtp($data['token']);
+        $verify_token = $notification->verifyOtp($data['token'], $data['token_id']);
 
         if (!$verify_token['status']) {
             return $verify_token;
@@ -195,11 +195,11 @@ class UserAuthService
         ];
     }
 
-    public function confirmResetPasswordToken($token)
+    public function confirmResetPasswordToken($token, $token_id)
     {
         $notification = new NotificationService();
 
-        $verify_token = $notification->verifyOtp($token);
+        $verify_token = $notification->verifyOtp($token, $token_id);
 
 
 

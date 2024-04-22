@@ -23,6 +23,11 @@ class TokenRepository implements TokenRepositoryInterface
         return Token::where('token', $token)->first() ?? null;
     }
 
+    public function findByTokenAndId(string $token, string $id)
+    {
+        return Token::where('token', $token)->where('id', $id)->first() ?? null;
+    }
+
     public function findUserToken(string $user_id, string $token)
     {
         return Token::where('user_id', $user_id)->where('token', $token)->first() ?? null;

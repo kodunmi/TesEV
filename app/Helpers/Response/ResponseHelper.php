@@ -4,7 +4,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 
 if (!function_exists('respondSuccess')) {
-    function respondSuccess(string $message, array|object|null $data = null, int $code = 200): JsonResponse
+    function respondSuccess(string $message, array|object|null|string $data = null, int $code = 200): JsonResponse
     {
         return response()->json([
             'status' => true,
