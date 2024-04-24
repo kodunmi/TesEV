@@ -10,7 +10,7 @@ class StripeService
 
     public function __construct()
     {
-        $this->stripe = new StripeClient('sk_test_BQokikJOvBiI2HlWgH4olfQ2');
+        $this->stripe = new StripeClient(env('STRIPE_SECRET_KEY'));
     }
 
 
