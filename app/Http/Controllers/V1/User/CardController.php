@@ -47,9 +47,8 @@ class CardController extends Controller
         }
 
         $data = [
-            'exp_month' => $validated['exp_month'],
-            'exp_year' => $validated['exp_year'],
-            'number' => $validated['number'],
+            'token_id' => $validated['token_id'],
+            'card_id' => $validated['card_id'],
             'customer_id' => $user->customer_id
         ];
 
@@ -66,9 +65,6 @@ class CardController extends Controller
         $card = $user->cards()->create([
             'card_id' =>  $response['data']->id,
             'last_four' =>  $response['data']->last4,
-            'exp_year' => $validated['exp_year'],
-            'exp_month' => $validated['exp_month'],
-            'number' => $validated['number'],
             'is_default' => true,
             'is_active' => true,
             'public_id' => uuid(),

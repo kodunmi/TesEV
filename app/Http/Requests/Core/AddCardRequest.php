@@ -22,9 +22,8 @@ class AddCardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'exp_month' => ['required', 'digits:2'],
-            'exp_year' => ['required', 'digits:4'],
-            'number' => ['required', 'integer'],
+            'token_id' => ['required'],
+            'card_id' => ['required'],
         ];
     }
 }

@@ -16,9 +16,6 @@ return new class extends Migration
             $table->foreignUuid('user_id');
             $table->string('card_id')->nullable();
             $table->string('last_four')->nullable();
-            $table->string('exp_year')->nullable();
-            $table->string('exp_month')->nullable();
-            $table->string('number')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->string('public_id')->nullable();

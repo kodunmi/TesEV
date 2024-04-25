@@ -38,14 +38,12 @@ class StripeService
     public function addCard($data)
     {
         $source = [
-            'exp_month' => $data['exp_month'],
-            'exp_year' => $data['exp_year'],
-            'number' => $data['number'],
-            'object' => 'card'
+            'token_id' => $data['token_id'],
+            'card_id' => $data['card_id'],
         ];
 
         try {
-            $response =  $this->stripe->customers->createSource($data['customer_id'], ['source' => $source]);
+            $response =  $this->stripe->customers->createSource($data['customer_id'], ['source' => $source['token_id']]);
 
             return [
                 "status" => true,
