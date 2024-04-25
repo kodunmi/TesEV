@@ -95,6 +95,7 @@ class CardController extends Controller
             'ephemeral_key' => $ephemeral_key['data']->secret,
             'customer_id' => $user->customer_id,
             'payment_intent_id' => $payment_intent['data']->id,
+            'client_secrete' =>  $payment_intent['data']->client_secret,
             'card' => $card
         ];
 

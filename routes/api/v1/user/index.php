@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\V1\User\AuthController;
 use App\Http\Controllers\V1\User\BuildingController;
 use App\Http\Controllers\V1\User\CardController;
@@ -57,6 +58,13 @@ Route::prefix('cards')->controller(CardController::class)->group(function () {
     Route::post('/', 'addCard');
     Route::get('/', 'getCards');
     Route::get('/default', 'getDefaultCard');
+});
+
+
+Route::prefix('wallet')->controller(WalletController::class)->group(function () {
+    Route::post('/fund', 'fundWallet');
+    Route::get('/', 'getBalance');
+    Route::get('/transactions', 'getTransactions');
 });
 
 
