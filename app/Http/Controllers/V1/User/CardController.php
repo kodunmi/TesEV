@@ -32,9 +32,6 @@ class CardController extends Controller
 
                 $user->createAsStripeCustomer($stripe_data);
 
-
-
-
                 $user->refresh();
             }
 
