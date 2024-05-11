@@ -17,6 +17,8 @@ return new class extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('email')->unique()->nullable();
+            $table->string('role')->nullable();
+            $table->boolean('active')->default(true);
             $table->string('password')->nullable();
 
             $table->softDeletes();

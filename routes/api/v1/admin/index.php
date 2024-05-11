@@ -17,11 +17,15 @@ Route::prefix('admins')->controller(AdminManagementController::class)->group(fun
     Route::prefix('{admin_id}')->group(function () {
         Route::get('/', 'getAdmin');
         Route::put('/', 'updateAdmin');
+        Route::put('/status/toggle', 'toggleStatus');
         Route::delete('/', 'removeAdmin');
 
         Route::prefix('role')->group(function () {
             Route::get('/', 'getAdminRole');
             Route::put('/change', 'changeAdminRole');
+        });
+        Route::prefix('password')->group(function () {
+            Route::post('/reset', 'resetAdminPassword');
         });
     });
 
