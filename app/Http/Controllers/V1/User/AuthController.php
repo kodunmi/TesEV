@@ -48,6 +48,7 @@ class AuthController extends Controller
             'phone_code' => $validated->phone_code,
             'first_name'  => $validated->first_name,
             'last_name'  => $validated->last_name,
+            'fcm_token' => $validated->fcm_token
         ];
 
         $register = $this->userAuthService->register($data);
