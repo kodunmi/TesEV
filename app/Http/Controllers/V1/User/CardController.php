@@ -19,88 +19,91 @@ class CardController extends Controller
     }
     public function addCard(AddCardRequest $request)
     {
-        $user = $this->userRepository->findById(auth()->id());
-        $validated = $request->validated();
+        try {
+            $user = $this->userRepository->findById(auth()->id());
+            $validated = $request->validated();
 
-        if (!$user->customer_id) {
-            $stripe_data = [
-                'name' => $user->first_name . ' ' . $user->last_name,
-                'email' => $user->email,
-                'phone' => $user->phone
+            if (!$user->stripe_id) {
+                $stripe_data = [
+                    'name' => $user->first_name . ' ' . $user->last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone
+                ];
+
+                $user->createAsStripeCustomer($stripe_data);
+
+                $user->refresh();
+            }
+
+            $data = [
+                'token_id' => $validated['token_id'],
+                'card_id' => $validated['card_id'],
+                'stripe_id' => $user->stripe_id
             ];
 
-            $created_stripe_customer = $this->stripeService->createCustomer($stripe_data);
+            $response = $this->stripeService->addCard($data);
 
-            if (!$created_stripe_customer['status']) {
-                return respondError("We cannot add card for user at the moment");
+            if (!$response['status']) {
+                return respondError($response['message'], null, 400);
             }
 
-            $update = $this->userRepository->updateUser($user->id, [
-                'customer_id' => $created_stripe_customer['data']->id
+            $user->cards()->update([
+                'is_default' => false,
             ]);
 
-            if (!$update) {
-                return respondError("We cannot add card for user at the moment");
+            $card = $user->cards()->create([
+                'stripe_id' =>  $response['data']->id,
+                'last_four' =>  $response['data']->last4,
+                'is_default' => true,
+                'is_active' => true,
+                'public_id' => uuid(),
+                'object' => $response['data'],
+            ]);
+
+
+            $setup_intent = $this->stripeService->setUpIntent(
+
+                customer_id: $user->stripe_id,
+
+
+            );
+
+            if (!$setup_intent['status']) {
+                return respondError($setup_intent['message'], null, 400);
             }
 
-            $user->refresh();
+            $ephemeral_key = $this->stripeService->ephemeralKey($user->stripe_id);
+
+            if (!$ephemeral_key['status']) {
+                return respondError($ephemeral_key['message'], null, 400);
+            }
+
+            $card->refresh();
+
+            $data = [
+                'ephemeral_key' => $ephemeral_key['data']->secret,
+                'customer_id' => $user->stripe_id,
+                'setup_intent_id' => $setup_intent['data']->id,
+                'client_secrete' =>  $setup_intent['data']->client_secret,
+                'card' => $card
+            ];
+
+            return respondSuccess($response['message'], $data);
+        } catch (\Throwable $th) {
+            return respondError($th->getMessage(), null, 400);
         }
-
-        $data = [
-            'token_id' => $validated['token_id'],
-            'card_id' => $validated['card_id'],
-            'customer_id' => $user->customer_id
-        ];
-
-        $response = $this->stripeService->addCard($data);
-
-        if (!$response['status']) {
-            return respondError($response['message'], null, 400);
-        }
-
-        $user->cards()->update([
-            'is_default' => false,
-        ]);
-
-        $card = $user->cards()->create([
-            'card_id' =>  $response['data']->id,
-            'last_four' =>  $response['data']->last4,
-            'is_default' => true,
-            'is_active' => true,
-            'public_id' => uuid(),
-            'object' => $response['data'],
-        ]);
-
-
-        $payment_intent = $this->stripeService->createPaymentIntent(
-            amount: 50,
-            customer_id: $user->customer_id,
-            card_id: $card->card_id,
-
-        );
-
-        if (!$payment_intent['status']) {
-            return respondError($payment_intent['message'], null, 400);
-        }
-
-        $ephemeral_key = $this->stripeService->ephemeralKey($user->customer_id);
-
-        if (!$ephemeral_key['status']) {
-            return respondError($ephemeral_key['message'], null, 400);
-        }
-
-        $card->refresh();
-
-        $data = [
-            'ephemeral_key' => $ephemeral_key['data']->secret,
-            'customer_id' => $user->customer_id,
-            'payment_intent_id' => $payment_intent['data']->id,
-            'client_secrete' =>  $payment_intent['data']->client_secret,
-            'card' => $card
-        ];
-
-        return respondSuccess($response['message'], $data);
     }
+
+    public function createSetUpIntent()
+    {
+
+        $user = $this->userRepository->findById(auth()->id());
+
+        $setup_intent = $user->createSetupIntent();
+
+        return respondSuccess('Setup  intent created successfully', $setup_intent);
+    }
+
 
     public function getCards()
     {
@@ -116,21 +119,5 @@ class CardController extends Controller
         $card = $user->cards()->where('is_default', true)->first();
 
         return respondSuccess('Default card fetched successfully', $card);
-    }
-
-    public function createCustomer()
-    {
-    }
-
-    public function updateCustomer()
-    {
-    }
-
-    public function getReceipts()
-    {
-    }
-
-    public function getReceipt()
-    {
     }
 }

@@ -13,7 +13,7 @@ class Card extends Model
 
     protected $fillable = [
         'user_id',
-        'card_id',
+        'stripe_id',
         'last_four',
         'exp_year',
         'exp_month',

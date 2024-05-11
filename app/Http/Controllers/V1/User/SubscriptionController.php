@@ -35,7 +35,7 @@ class SubscriptionController extends Controller
     {
         $user = $this->userRepository->findById(auth()->id());
 
-        return respondSuccess('all user active subscriptions', UserSubscriptionResource::collection($user->activeSubscriptions));
+        return respondSuccess('all user active subscriptions', UserSubscriptionResource::collection($user->subscriptions()->active()->get()));
     }
 
 
@@ -43,7 +43,7 @@ class SubscriptionController extends Controller
     {
         $user = $this->userRepository->findById(auth()->id());
 
-        return respondSuccess('all user active subscriptions', UserSubscriptionResource::collection($user->expiredSubscriptions));
+        return respondSuccess('all user active subscriptions', UserSubscriptionResource::collection($user->subscriptions()->pastDue()->get()));
     }
 
     public function getAllSubscriptions()
@@ -54,35 +54,35 @@ class SubscriptionController extends Controller
     }
 
 
-    public function subscribe(Request $request, $package_id)
+    public function subscribe($package_id)
     {
 
 
         $response = $this->subscriptionService->subscribe($package_id);
 
         if (!$response['status']) {
-            return respondError($response['code'], null, $response['message']);
+            return respondError($response['message'], null, $response['code']);
         }
 
         return respondSuccess($response['message'], new UserSubscriptionResource($response['data']));
     }
 
-    public function unsubscribe($package_id)
+    public function unsubscribe()
     {
-        $response = $this->subscriptionService->unsubscribe($package_id);
+        $response = $this->subscriptionService->unsubscribe();
 
         if (!$response['status']) {
-            return respondError($response['code'], null, $response['message']);
+            return respondError($response['message'], null, $response['code']);
         }
 
         return respondSuccess($response['message'], $response['data']);
     }
 
 
-    public function reactiveSubscription(Request $request, $package_id)
+    public function reactiveSubscription()
     {
-        $auto_renew = $request->query('autoRenew', false);
-        $response = $this->subscriptionService->subscribe($package_id, $auto_renew);
+
+        $response = $this->subscriptionService->resume();
 
         if (!$response['status']) {
             return respondError($response['code'], null, $response['message']);

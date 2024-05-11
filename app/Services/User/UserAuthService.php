@@ -62,6 +62,12 @@ class UserAuthService
             ];
         }
 
+        if (isset($credentials['fcm_token'])) {
+            $this->userRepository->updateUser($user->id, [
+                'fcm_token' => $credentials['fcm_token']
+            ]);
+        }
+
         return [
             'status' => false,
             'message' => 'Email or password not correct',
@@ -119,27 +125,17 @@ class UserAuthService
             ];
         }
 
-        // create stripe customer
         $stripe_data = [
             'name' => $user->first_name . ' ' . $user->last_name,
             'email' => $user->email,
             'phone' => $user->phone
         ];
 
-        $response = $this->stripeService->createCustomer($stripe_data);
-
-        $update = $this->userRepository->updateUser($user->id, [
-            'email_verified_at' => now(),
-            'customer_id' => $response['data']->id
+        $this->userRepository->updateUser($user->id, [
+            'email_verified_at' => now()
         ]);
 
-        if (!$update) {
-            return [
-                'status' => false,
-                'message' => "Error updating email verification status, try again",
-                'data' => null
-            ];
-        }
+        $user->createAsStripeCustomer($stripe_data);
 
         return [
             'status' => true,

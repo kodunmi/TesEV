@@ -38,7 +38,7 @@ class PushNotification extends Notification implements ShouldQueue
             body: $this->payload['body'],
             image: 'http://example.com/url-to-image-here.png'
         )))
-            ->data(['data1' => 'value', 'data2' => 'value2'])
+            ->data($this->payload['data'] ?? [])
             ->custom([
                 'android' => [
                     'notification' => [

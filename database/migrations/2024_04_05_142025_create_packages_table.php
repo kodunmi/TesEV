@@ -15,13 +15,12 @@ return new class extends Migration
         Schema::create('packages', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('public_id')->index();
-
             $table->string('title')->nullable();
+            $table->string('stripe_id')->nullable();
             $table->text('description')->nullable();
             $table->bigInteger('amount');
             $table->integer('hours');
-            $table->string('frequency')->default(SubscriptionPaymentFrequencyEnum::ANNUALLY->value);
-            $table->string('status')->nullable();
+            $table->string('frequency')->default(SubscriptionPaymentFrequencyEnum::YEAR->value);
             $table->boolean('active')->default(false);
 
             $table->softdeletes();

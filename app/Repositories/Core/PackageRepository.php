@@ -27,7 +27,7 @@ class PackageRepository
         $package->title = $data['title'] ?? null;
         $package->description = $data['description'] ?? null;
         $package->amount = $data['amount'] ?? null;
-        $package->frequency = $data['frequency'] ?? SubscriptionPaymentFrequencyEnum::ANNUALLY->value;
+        $package->frequency = $data['frequency'] ?? SubscriptionPaymentFrequencyEnum::YEAR->value;
         $package->status = $data['status'] ?? null;
         $package->active = $data['active'] ?? false;
         $package->hours = $data['hours'] ?? null;

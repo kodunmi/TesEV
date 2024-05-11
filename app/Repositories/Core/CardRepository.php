@@ -17,6 +17,11 @@ class CardRepository implements CardRepositoryInterface
         return Card::find($id);
     }
 
+    public function findByStripeId(string $id): ?Card
+    {
+        return Card::where('stripe_id', $id)->first();
+    }
+
     public function create(array $data): Card
     {
         $card = new Card();

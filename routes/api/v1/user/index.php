@@ -38,9 +38,10 @@ Route::prefix('subscriptions')->controller(SubscriptionController::class)->group
 
     Route::prefix('{package_id}')->group(function () {
         Route::post('/subscribe', 'subscribe');
-        Route::post('/unsubscribe', 'unsubscribe');
-        Route::post('/reactivate', 'reactiveSubscription');
     });
+
+    Route::post('/unsubscribe', 'unsubscribe');
+    Route::post('/reactivate', 'reactiveSubscription');
 });
 
 

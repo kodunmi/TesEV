@@ -12,12 +12,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Cashier\Billable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
     use HasUuids, SoftDeletes, HasApiTokens;
+    use Billable;
 
     protected $keyType = 'string';
     /**
@@ -34,7 +36,8 @@ class User extends Authenticatable
         'password',
         'email_verified_at',
         'wallet',
-        'customer_id'
+        'subscription_balance',
+        'fcm_token'
     ];
 
     /**
@@ -60,6 +63,16 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Specifies the user's FCM token
+     *
+     * @return string|array
+     */
+    public function routeNotificationForFcm()
+    {
+        return $this->fcm_token;
+    }
+
 
     public function compliances(): HasMany
     {
@@ -82,77 +95,6 @@ class User extends Authenticatable
         return $this->hasManyThrough(Report::class, Trip::class);
     }
 
-    public function subscriptions(): BelongsToMany
-    {
-        return $this->belongsToMany(Package::class)->using(PackageUser::class)
-            ->as('subscription')
-            ->withTimestamps()
-            ->withPivot([
-                'id',
-                'subscribed_at',
-                'due_at',
-                'unsubscribed_at',
-                'balance'
-            ])
-            ->wherePivotNull('unsubscribed_at');
-    }
-
-    public function activeSubscriptions(): BelongsToMany
-    {
-        return $this->belongsToMany(Package::class)
-            ->using(PackageUser::class)
-            ->as('subscription')
-            ->withTimestamps()
-            ->withPivot([
-                'id',
-                'subscribed_at',
-                'due_at',
-                'unsubscribed_at',
-                'balance',
-            ])
-            ->wherePivot('due_at', '>', now())
-            ->wherePivotNull('unsubscribed_at');
-    }
-
-    public function unsubscribeSubscriptions(): BelongsToMany
-    {
-        return $this->belongsToMany(Package::class)
-            ->using(PackageUser::class)
-            ->as('subscription')
-            ->withTimestamps()
-            ->withPivot([
-                'id',
-                'subscribed_at',
-                'due_at',
-                'unsubscribed_at',
-                'frequency',
-                'auto_renew',
-                'payment_mode',
-                'balance'
-            ])
-            ->wherePivotNotNull('unsubscribed_at');
-    }
-
-    public function expiredSubscriptions(): BelongsToMany
-    {
-        return $this->belongsToMany(Package::class)
-            ->using(PackageUser::class)
-            ->as('subscription')
-            ->withTimestamps()
-            ->withPivot([
-                'id',
-                'subscribed_at',
-                'due_at',
-                'unsubscribed_at',
-                'frequency',
-                'auto_renew',
-                'payment_mode',
-                'balance'
-            ])
-            ->wherePivot('due_at', '<', now()->toDateTimeString())
-            ->wherePivotNull('unsubscribed_at');
-    }
-
     public function cards(): HasMany
     {
         return $this->hasMany(Card::class);
@@ -160,6 +102,6 @@ class User extends Authenticatable
 
     public function activeCard(): HasOne
     {
-        return $this->hasOne(Card::class)->where('is_active', true);
+        return $this->hasOne(Card::class)->where('is_default', true);
     }
 }

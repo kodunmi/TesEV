@@ -6,6 +6,8 @@ use Illuminate\Routing\UrlGenerator;
 
 use Illuminate\Support\ServiceProvider;
 
+use Laravel\Cashier\Cashier;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,5 +26,7 @@ class AppServiceProvider extends ServiceProvider
         if (env('APP_ENV') == 'production') {
             $url->forceScheme('https');
         }
+
+        // Cashier::calculateTaxes();
     }
 }

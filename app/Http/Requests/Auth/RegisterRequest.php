@@ -32,6 +32,7 @@ class RegisterRequest extends FormRequest
             'phone_code' => ['required_with:phone'],
             'first_name' => ['required', 'string'],
             'last_name' => ['required', 'string'],
+            'fcm_token' => ['required', 'string']
         ];
     }
 

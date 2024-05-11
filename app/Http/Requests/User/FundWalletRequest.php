@@ -22,7 +22,8 @@ class FundWalletRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'integer']
+            'amount' => ['required', 'integer'],
+            // 'redirect' => ['required', 'string']
         ];
     }
 }

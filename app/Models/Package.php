@@ -17,28 +17,13 @@ class Package extends Model
         'description',
         'amount',
         'hours',
+        'stripe_id',
         'frequency',
-        'status',
         'active',
         'public_id',
     ];
 
     protected $casts = [
-        'active' => 'boolean',
-        'file_upload' => 'boolean',
+        'active' => 'boolean'
     ];
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class)->using(PackageUser::class)
-            ->as('subscription')
-            ->withTimestamps()
-            ->withPivot([
-                'id',
-                'subscribed_at',
-                'due_at',
-                'unsubscribed_at',
-                'frequency',
-            ]);
-    }
 }

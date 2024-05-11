@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('cards', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
-            $table->string('card_id')->nullable();
+            $table->string('stripe_id')->nullable();
             $table->string('last_four')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);

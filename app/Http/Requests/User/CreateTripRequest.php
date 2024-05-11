@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User;
 
+use App\Enum\PaymentTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Validation\Rule;
@@ -28,6 +29,7 @@ class CreateTripRequest extends FormRequest
             'vehicle_id' => ['uuid', 'required', Rule::exists('vehicles', 'id')],
             'start_time' => ['required', 'date_format:"Y-m-d H:i:s'],
             'end_time' => ['required', 'date_format:"Y-m-d H:i:s'],
+            'charge_from' => ['required', Rule::in(PaymentTypeEnum::class)]
         ];
     }
 

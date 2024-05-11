@@ -23,6 +23,8 @@ class Admin extends Model
         'public_id',
         'first_name',
         'last_name',
+        'role',
+        'active',
         'email'
     ];
 
