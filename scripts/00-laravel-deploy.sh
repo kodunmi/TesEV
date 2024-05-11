@@ -11,7 +11,7 @@ php artisan route:cache
 echo "Running migrations..."
 php artisan migrate:fresh --force --seed
 
-echo "Starting Queue"
-php artisan queue:work
+# echo "Starting Queue"
+# php artisan queue:work
 
 echo "done deploying"
