@@ -2,6 +2,8 @@ FROM richarvey/nginx-php-fpm:3.1.6
 
 COPY . .
 
+RUN docker-php-ext-install bcmath
+
 # Image config
 ENV SKIP_COMPOSER 1
 ENV WEBROOT /var/www/html/public
