@@ -9,6 +9,7 @@ use App\Enum\TransactionStatusEnum;
 use App\Enum\TransactionTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\GetCostingRequest;
 use App\Http\Requests\User\CreateTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
 use App\Models\TripSetting;
@@ -44,7 +45,7 @@ class TripController extends Controller
 
 
 
-    public function getCosting(CreateTripRequest $request)
+    public function getCosting(GetCostingRequest $request)
     {
 
         $validated = (object) $request->validated();
@@ -65,67 +66,9 @@ class TripController extends Controller
 
         $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
 
-        // $price_per_minute = $vehicle->price_per_hour / 60;
-
         $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
 
-
-        // $total_amount = $mins_difference * $price_per_minute;
-
-
         $user = $this->userRepository->findById(auth()->id());
-
-        $active_subscription = $user->activeSubscriptions()->first();
-
-        $settings = TripSetting::first();
-
-
-        // $tax_amount = calculatePercentageOfValue($settings->tax_percentage, $total_amount);
-
-        if ($active_subscription) {
-
-            $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
-
-            if ($active_subscription->subscription->balance < $total_amount) {
-
-
-                $outstanding_after_subscription_balance_deduction = $total_amount - $active_subscription->subscription->balance;
-
-
-                if ($outstanding_after_subscription_balance_deduction >= $user->wallet) {
-
-                    // remove from subscription and remove outstanding from the wallet
-
-                } else {
-
-                    // charge from
-                }
-
-
-
-
-                return respondError("You do not have enough in your subscription to cover fare");
-            }
-
-
-
-            $balance = $active_subscription->subscription->balance - $total_amount;
-
-            $user->unsubscribeSubscriptions()->updateExistingPivot($active_subscription->id, [
-                'balance' => $balance
-            ]);
-
-            $payment_type = PaymentTypeEnum::SUBSCRIPTION;
-        } else {
-            // TODO:add card or charge card
-
-            $payment_type = PaymentTypeEnum::CARD;
-        }
-
-
-
-
-
 
 
         // calculate amount based on the vehicle
@@ -173,75 +116,6 @@ class TripController extends Controller
 
         $payment->transaction()->save($transaction);
     }
-
-    // public function getTripCost(CreateTripRequest $request)
-    // {
-    //     $validated = (object) $request->validated();
-
-    //     $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
-
-    //     // $price_per_minute = $vehicle->price_per_hour / 60;
-
-    //     $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
-
-
-    //     // $total_amount = $mins_difference * $price_per_minute;
-
-
-    //     $user = $this->userRepository->findById(auth()->id());
-
-    //     $active_subscription = $user->activeSubscriptions()->first();
-
-    //     $settings = TripSetting::first();
-
-
-    //     // $tax_amount = calculatePercentageOfValue($settings->tax_percentage, $total_amount);
-
-    //     if ($active_subscription) {
-
-    //         $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
-
-    //         if ($active_subscription->subscription->balance < $total_amount) {
-
-    //             return respondSuccess("Choose channel pay outstanding");
-
-
-
-    //             // return respondError("You do not have enough in your subscription to cover fare");
-    //         }
-    //     } else {
-    //         // return respondSuccess("User can book ride", [
-    //         //     'can_book' => true,
-    //         //     'amount'
-    //         //     'outstanding'=> 0
-    //         // ]);
-    //     }
-
-
-
-
-
-
-
-    //     // calculate amount based on the vehicle
-
-    //     // check if user has subscription
-
-    //     // check if they has any unit left
-
-    //     // check if unit will cover ride
-
-    //     // tell them the amount the unit can cover
-
-    //     // if
-
-    //     $trip = $this->tripRepository->create([
-    //         'user_id' => auth()->id(),
-    //         'vehicle_id' => $validated->vehicle_id,
-    //         'start_time' => $validated->start_time,
-    //         'end_time' => $validated->end_time,
-    //     ]);
-    // }
 
     public function addExtraTime()
     {

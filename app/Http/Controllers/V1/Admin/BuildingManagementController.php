@@ -3,10 +3,16 @@
 namespace App\Http\Controllers\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Repositories\Core\BuildingRepository;
 use Illuminate\Http\Request;
 
 class BuildingManagementController extends Controller
 {
+    public function __construct(
+        protected BuildingRepository $buildingRepository
+    ) {
+    }
+
     public function getBuildings()
     {
     }
