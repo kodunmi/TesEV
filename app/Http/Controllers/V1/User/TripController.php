@@ -64,57 +64,49 @@ class TripController extends Controller
 
         $validated = (object) $request->validated();
 
-        $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
 
-        $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
+        $response = $this->tripService->createTrip($validated);
 
-        $user = $this->userRepository->findById(auth()->id());
+        if (!$response['status']) {
+            return respondError('Error costing trip');
+        }
 
-
-        // calculate amount based on the vehicle
-
-        // check if user has subscription
-
-        // check if they has any unit left
-
-        // check if unit will cover ride
-
-        // tell them the amount the unit can cover
-
-        // if
-
-        $trip = $this->tripRepository->create([
-            'user_id' => auth()->id(),
-            'vehicle_id' => $validated->vehicle_id,
-            'start_time' => $validated->start_time,
-            'end_time' => $validated->end_time,
-        ]);
+        return respondSuccess($response['message'], $response['data']);
 
 
-        $payment = TripTransaction::create([
-            'trip_id' => $trip->id,
-            'building_id' => $trip->vehicle->building->id,
-            'vehicle_id' => $trip->vehicle->id,
-            'user_id' => auth()->id(),
-            'reference' => generateReference(),
-            'public_id' => uuid(),
-            'payment_type' => $payment_type,
-            'amount' => $total_amount,
-        ]);
 
-        $transaction = $this->transactionRepository->create(
-            [
-                'amount' => $payment->amount,
-                'title' => "Trip payment",
-                'narration' => "Payment for trip",
-                'status' => TransactionStatusEnum::PENDING->value,
-                'type' => TransactionTypeEnum::TRIP->value,
-                'entry' => "debit",
-                'channel' => 'web',
-            ]
-        );
+        // $trip = $this->tripRepository->create([
+        //     'user_id' => auth()->id(),
+        //     'vehicle_id' => $validated->vehicle_id,
+        //     'start_time' => $validated->start_time,
+        //     'end_time' => $validated->end_time,
+        // ]);
 
-        $payment->transaction()->save($transaction);
+
+        // $payment = TripTransaction::create([
+        //     'trip_id' => $trip->id,
+        //     'building_id' => $trip->vehicle->building->id,
+        //     'vehicle_id' => $trip->vehicle->id,
+        //     'user_id' => auth()->id(),
+        //     'reference' => generateReference(),
+        //     'public_id' => uuid(),
+        //     'payment_type' => $payment_type,
+        //     'amount' => $total_amount,
+        // ]);
+
+        // $transaction = $this->transactionRepository->create(
+        //     [
+        //         'amount' => $payment->amount,
+        //         'title' => "Trip payment",
+        //         'narration' => "Payment for trip",
+        //         'status' => TransactionStatusEnum::PENDING->value,
+        //         'type' => TransactionTypeEnum::TRIP->value,
+        //         'entry' => "debit",
+        //         'channel' => 'web',
+        //     ]
+        // );
+
+        // $payment->transaction()->save($transaction);
     }
 
     public function addExtraTime()
