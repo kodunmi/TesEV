@@ -6,6 +6,8 @@ use App\Actions\Cloud\CloudService;
 use App\Enum\CloudTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
 use App\Http\Resources\Core\VehicleResource;
+use App\Models\Package;
+use App\Models\Product;
 use App\Models\TripSetting;
 use App\Repositories\Core\ReportRepository;
 use App\Repositories\Core\VehicleRepository;
@@ -33,18 +35,21 @@ class TripService
 
         $user = $this->userRepository->findById(auth()->id());
 
-        $active_subscription = $user->activeSubscriptions()->first();
+        $product = Product::all()->first();
+
+        $subscribed = $user->subscribed($product->stripe_id);
+
 
         $settings = TripSetting::first();
 
 
-        if ($active_subscription) {
+        if ($subscribed) {
 
             $total_amount = $mins_difference / pricePerHourToPricePerMinute($settings->subscriber_price_per_hour);
 
-            if ($active_subscription->subscription->balance < $total_amount) {
+            if ($user->subscription_balance < $total_amount) {
 
-                $outstanding_after_subscription_balance_deduction = $total_amount - $active_subscription->subscription->balance;
+                $outstanding_after_subscription_balance_deduction = $total_amount - $user->subscription_balance;
 
                 $data = [
                     'vehicle' => new VehicleResource($vehicle),
@@ -56,7 +61,8 @@ class TripService
                     'has_outstanding' => $outstanding_after_subscription_balance_deduction > 0,
                     'outstanding' => $outstanding_after_subscription_balance_deduction,
                     'choose_payment_type_to_cover_outstanding' => $outstanding_after_subscription_balance_deduction > 0,
-                    'wallet_amount' => $user->wallet
+                    'wallet_amount' => centToDollar($user->wallet),
+                    'subscription_balance' => centToDollar($user->subscription_balance)
                 ];
             } else {
 
@@ -70,12 +76,11 @@ class TripService
                     'has_outstanding' => false,
                     'outstanding' => 0,
                     'choose_payment_type_to_cover_outstanding' => false,
-                    'wallet_amount' => $user->wallet
+                    'wallet_amount' => centToDollar($user->wallet),
+                    'subscription_balance' => centToDollar($user->subscription_balance)
                 ];
             }
         } else {
-
-
 
             $data = [
                 'vehicle' => new VehicleResource($vehicle),
@@ -87,7 +92,7 @@ class TripService
                 'has_outstanding' => false,
                 'outstanding' => 0,
                 'choose_payment_type_to_cover_outstanding' => false,
-                'wallet_amount' => $user->wallet
+                'wallet_amount' => centToDollar($user->wallet)
             ];
         }
 

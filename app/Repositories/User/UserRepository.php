@@ -10,7 +10,9 @@ class UserRepository implements UserInterface
 
     public function all()
     {
+        return User::paginate(10);
     }
+
     public function findById(string $id): User
     {
         return User::find($id);
@@ -19,6 +21,11 @@ class UserRepository implements UserInterface
     public function findByEmail(string $email): User|null
     {
         return User::where('email', $email)->first();
+    }
+
+    public function findByStripeId(string $strip_id): User|null
+    {
+        return User::where('stripe_id', $strip_id)->first();
     }
 
     public function createUser(array $data): ?User
@@ -34,8 +41,8 @@ class UserRepository implements UserInterface
             $user->gender = $data['gender'] ?? null;
             $user->status = $data['status'] ?? 'pending'; // default to 'pending' if not provided
             $user->date_of_birth = $data['date_of_birth'] ?? null;
+            $user->fcm_token = $data['fcm_token'] ?? null;
             $user->password = $data['password'] ?? null;
-            $user->customer_id = $data['customer_id'] ?? null;
 
             $user->save();
 
@@ -59,11 +66,12 @@ class UserRepository implements UserInterface
             $user->pin = $data['pin'] ?? $user->pin;
             $user->gender = $data['gender'] ?? $user->gender;
             $user->wallet = $data['wallet'] ?? $user->wallet;
+            $user->subscription_balance = $data['subscription_balance'] ?? $user->subscription_balance;
             $user->status = $data['status'] ?? $user->status;
             $user->date_of_birth = $data['date_of_birth'] ?? $user->date_of_birth;
+            $user->fcm_token = $data['fcm_token'] ?? $user->fcm_token;
             $user->password = isset($data['password']) ? hashData($data['password'])  : $user->password;
             $user->email_verified_at = $data['email_verified_at'] ?? $user->email_verified_at;
-            $user->customer_id = $data['customer_id'] ?? $user->customer_id;
 
             $user->save();
 

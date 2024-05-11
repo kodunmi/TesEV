@@ -11,17 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cards', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id');
+            $table->string('name')->nullable();
+            $table->string('description')->nullable();
             $table->string('stripe_id')->nullable();
-            $table->string('last_four')->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->string('public_id')->nullable();
-            $table->json('object')->nullable();
-
-            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -31,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cards');
+        Schema::dropIfExists('products');
     }
 };

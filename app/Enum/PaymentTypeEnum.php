@@ -6,4 +6,5 @@ enum PaymentTypeEnum: string
 {
     case CARD = "card";
     case SUBSCRIPTION = "subscription";
+    case WALLET = "wallet";
 }

@@ -23,7 +23,7 @@ class CardController extends Controller
             $user = $this->userRepository->findById(auth()->id());
             $validated = $request->validated();
 
-            if (!$user->customer_id) {
+            if (!$user->stripe_id) {
                 $stripe_data = [
                     'name' => $user->first_name . ' ' . $user->last_name,
                     'email' => $user->email,
@@ -38,7 +38,7 @@ class CardController extends Controller
             $data = [
                 'token_id' => $validated['token_id'],
                 'card_id' => $validated['card_id'],
-                'customer_id' => $user->customer_id
+                'stripe_id' => $user->stripe_id
             ];
 
             $response = $this->stripeService->addCard($data);
@@ -52,7 +52,7 @@ class CardController extends Controller
             ]);
 
             $card = $user->cards()->create([
-                'card_id' =>  $response['data']->id,
+                'stripe_id' =>  $response['data']->id,
                 'last_four' =>  $response['data']->last4,
                 'is_default' => true,
                 'is_active' => true,
@@ -61,18 +61,18 @@ class CardController extends Controller
             ]);
 
 
-            $payment_intent = $this->stripeService->createPaymentIntent(
-                amount: 50,
-                customer_id: $user->customer_id,
-                card_id: $card->card_id,
+            $setup_intent = $this->stripeService->setUpIntent(
+
+                customer_id: $user->stripe_id,
+
 
             );
 
-            if (!$payment_intent['status']) {
-                return respondError($payment_intent['message'], null, 400);
+            if (!$setup_intent['status']) {
+                return respondError($setup_intent['message'], null, 400);
             }
 
-            $ephemeral_key = $this->stripeService->ephemeralKey($user->customer_id);
+            $ephemeral_key = $this->stripeService->ephemeralKey($user->stripe_id);
 
             if (!$ephemeral_key['status']) {
                 return respondError($ephemeral_key['message'], null, 400);
@@ -82,9 +82,9 @@ class CardController extends Controller
 
             $data = [
                 'ephemeral_key' => $ephemeral_key['data']->secret,
-                'customer_id' => $user->customer_id,
-                'payment_intent_id' => $payment_intent['data']->id,
-                'client_secrete' =>  $payment_intent['data']->client_secret,
+                'customer_id' => $user->stripe_id,
+                'setup_intent_id' => $setup_intent['data']->id,
+                'client_secrete' =>  $setup_intent['data']->client_secret,
                 'card' => $card
             ];
 
@@ -119,21 +119,5 @@ class CardController extends Controller
         $card = $user->cards()->where('is_default', true)->first();
 
         return respondSuccess('Default card fetched successfully', $card);
-    }
-
-    public function createCustomer()
-    {
-    }
-
-    public function updateCustomer()
-    {
-    }
-
-    public function getReceipts()
-    {
-    }
-
-    public function getReceipt()
-    {
     }
 }

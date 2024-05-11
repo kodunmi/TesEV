@@ -244,6 +244,14 @@ if (!function_exists('dollarToCent')) {
     }
 }
 
+if (!function_exists('centToDollar')) {
+    function centToDollar($amount)
+    {
+        return $amount / 100;
+    }
+}
+
+
 
 if (!function_exists('calculateMinutesDifference')) {
     function calculateMinutesDifference($startTime, $endTime)
