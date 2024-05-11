@@ -29,7 +29,7 @@ class CreateTripRequest extends FormRequest
             'vehicle_id' => ['uuid', 'required', Rule::exists('vehicles', 'id')],
             'start_time' => ['required', 'date_format:"Y-m-d H:i:s'],
             'end_time' => ['required', 'date_format:"Y-m-d H:i:s'],
-            'charge_from' => ['required', Rule::in(PaymentTypeEnum::class)]
+            'charge_from' => ['nullable', Rule::in(PaymentTypeEnum::class)]
         ];
     }
 
