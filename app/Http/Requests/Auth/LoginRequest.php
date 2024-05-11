@@ -32,7 +32,8 @@ class LoginRequest extends FormRequest
             ],
             'password' => [
                 'required'
-            ]
+            ],
+            'fcm_token' => ['nullable']
         ];
     }
 
