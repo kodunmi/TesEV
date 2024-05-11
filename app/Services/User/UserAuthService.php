@@ -62,6 +62,12 @@ class UserAuthService
             ];
         }
 
+        if (isset($credentials['fcm_token'])) {
+            $this->userRepository->updateUser($user->id, [
+                'fcm_token' => $credentials['fcm_token']
+            ]);
+        }
+
         return [
             'status' => false,
             'message' => 'Email or password not correct',
@@ -124,6 +130,10 @@ class UserAuthService
             'email' => $user->email,
             'phone' => $user->phone
         ];
+
+        $this->userRepository->updateUser($user->id, [
+            'email_verified_at' => now()
+        ]);
 
         $user->createAsStripeCustomer($stripe_data);
 
