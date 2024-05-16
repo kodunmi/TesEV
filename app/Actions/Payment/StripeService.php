@@ -257,7 +257,7 @@ class StripeService
                 ];
             }
 
-            $payment = $user->charge(dollarToCent($amount), $user->activeCard->stripe_id, [
+            $payment = $user->charge($amount, $user->activeCard->stripe_id, [
                 'metadata' => $meta,
                 'off_session' => true
             ]);

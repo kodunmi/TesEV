@@ -5,7 +5,15 @@ namespace App\Listeners;
 use App\Actions\Notifications\NotificationService;
 use App\Enum\ChargeTypeEnum;
 use App\Enum\NotificationTypeEnum;
+use App\Enum\PaymentTypeEnum;
+use App\Enum\TransactionStatusEnum;
+use App\Enum\TransactionTypeEnum;
+use App\Enum\TripStatusEnum;
+use App\Models\TripTransaction;
+use App\Models\WalletTransaction;
 use App\Repositories\Core\CardRepository;
+use App\Repositories\Core\TransactionRepository;
+use App\Repositories\Core\TripRepository;
 use App\Repositories\User\UserRepository;
 use Laravel\Cashier\Events\WebhookReceived;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +26,9 @@ class StripeEventListener
      */
     public function __construct(
         protected UserRepository $userRepository,
-        protected CardRepository $cardRepository
+        protected CardRepository $cardRepository,
+        protected TripRepository $tripRepository,
+        protected TransactionRepository $transactionRepository
     ) {
         //
     }
@@ -63,35 +73,213 @@ class StripeEventListener
         }
 
 
-        if ($event->payload['type'] === 'payment_intent.succeeded') {
-
+        if ($event->payload['type'] === 'payment_intent.payment_failed') {
             $charge_type = $event->payload['data']['object']['metadata']['type'];
-
-            $user_id = $event->payload['data']['object']['metadata']['user_id'];
-
             $amount = $event->payload['data']['object']['amount'];
 
-            $user = $this->userRepository->findById($user_id);
 
             if ($charge_type === ChargeTypeEnum::WALLET_FUND->value) {
+                try {
+                    $user_id = $event->payload['data']['object']['metadata']['user_id'];
+                    $wallet_transaction_id = $event->payload['data']['object']['metadata']['wallet_transaction_id'];
 
-                if ($user) {
-                    $updated = $this->userRepository->updateUser($user->id, [
-                        'wallet' => $user->wallet + $amount
+
+                    $wallet_transaction = WalletTransaction::findOrFail($wallet_transaction_id);
+
+                    $wallet_transaction->update([
+                        'status' => TransactionStatusEnum::FAILED->value,
                     ]);
 
-                    if ($updated) {
+                    $wallet_transaction->transaction()->update([
+                        'status' => TransactionStatusEnum::FAILED->value,
+                    ]);
+
+                    $user = $this->userRepository->findById($user_id);
+
+                    if ($user) {
 
                         $notification = new NotificationService($user);
 
                         $notification
-                            ->setBody("Transaction successful, your wallet has been created with " . centToDollar($amount))
-                            ->setTitle('Your wallet has been credited')
+                            ->setBody("Transaction failed, we could not fund your wallet with " . centToDollar($amount))
+                            ->setTitle('Transaction')
+                            ->setUrl('http://google.com')
+                            ->setType(NotificationTypeEnum::WALLET_FUND_FAILED)
+                            ->sendPushNotification()
+                            ->sendInAppNotification();
+                    }
+                } catch (\Throwable $th) {
+                    logError("Error occurred @ wallet funding failed webhook", [
+                        'error' => $th
+                    ]);
+                }
+            }
+
+            if ($charge_type === ChargeTypeEnum::TRIP_FUND->value) {
+
+                try {
+                    $trip_id = $event->payload['data']['object']['metadata']['trip_id'];
+
+                    $trip = $this->tripRepository->findById($trip_id);
+
+                    if ($trip) {
+
+                        $trip->update([
+                            'status' => TripStatusEnum::CANCELED->value
+                        ]);
+
+                        $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+
+                        if ($trip_transaction) {
+                            $trip_transaction->update([
+                                'status' => TransactionStatusEnum::FAILED->value
+                            ]);
+
+
+                            foreach ($trip_transaction->transactions as $key => $transaction) {
+                                $transaction->update([
+                                    'status' => TransactionStatusEnum::FAILED->value
+                                ]);
+                            }
+                        }
+
+
+                        $notification = new NotificationService($user);
+
+                        $notification
+                            ->setBody("Transaction failed, your trip has canceled")
+                            ->setTitle('Trip canceled')
                             ->setUrl('http://google.com')
                             ->setType(NotificationTypeEnum::WALLET_FUND)
                             ->sendPushNotification()
                             ->sendInAppNotification();
                     }
+                } catch (\Throwable $th) {
+                    logError("Error occurred @ Trip funding failed webhook", [
+                        'error' => $th
+                    ]);
+                }
+            }
+        }
+
+
+        if ($event->payload['type'] === 'payment_intent.succeeded') {
+
+            $charge_type = $event->payload['data']['object']['metadata']['type'];
+            $amount = $event->payload['data']['object']['amount'];
+
+
+            if ($charge_type === ChargeTypeEnum::WALLET_FUND->value) {
+
+                try {
+
+                    $user_id = $event->payload['data']['object']['metadata']['user_id'];
+
+                    $wallet_transaction_id = $event->payload['data']['object']['metadata']['wallet_transaction_id'];
+
+
+                    $wallet_transaction = WalletTransaction::findOrFail($wallet_transaction_id);
+
+                    $wallet_transaction->update([
+                        'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                    ]);
+
+                    $wallet_transaction->transaction()->update([
+                        'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                    ]);
+
+                    $user = $this->userRepository->findById($user_id);
+
+                    if ($user) {
+                        $updated = $this->userRepository->updateUser($user->id, [
+                            'wallet' => $user->wallet + $amount
+                        ]);
+
+                        $this->transactionRepository->create(
+                            [
+                                'amount' => $amount,
+                                'user_id' => $user->id,
+                                'total_amount' => $amount,
+                                'title' => "Wallet token received",
+                                'narration' => "Your account has been created with $amount wallet token",
+                                'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                                'type' => TransactionTypeEnum::WALLET->value,
+                                'entry' => "credit",
+                                'channel' => PaymentTypeEnum::CARD->value,
+                                'tax_amount' => 0.00,
+                                'tax_percentage' => 0.00
+                            ]
+                        );
+
+                        if ($updated) {
+
+                            $notification = new NotificationService($user);
+
+                            $notification
+                                ->setBody("Transaction successful, your wallet has been created with " . centToDollar($amount))
+                                ->setTitle('Your wallet has been credited')
+                                ->setUrl('http://google.com')
+                                ->setType(NotificationTypeEnum::WALLET_FUND)
+                                ->sendPushNotification()
+                                ->sendInAppNotification();
+                        }
+                    }
+                } catch (\Throwable $th) {
+                    logError("Error occurred @ wallet funding successful webhook", [
+                        'error' => $th
+                    ]);
+                }
+            }
+
+            if ($charge_type === ChargeTypeEnum::TRIP_FUND->value) {
+
+                try {
+                    $trip_id = $event->payload['data']['object']['metadata']['trip_id'];
+
+                    $trip = $this->tripRepository->findById($trip_id);
+
+                    if ($trip) {
+
+                        $user = $this->userRepository->findById($trip->user_id);
+
+                        $user->update([
+                            'subscription_balance' => 0
+                        ]);
+
+                        $trip->update([
+                            'status' => TripStatusEnum::RESERVED->value
+                        ]);
+
+                        $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+
+                        if ($trip_transaction) {
+                            $trip_transaction->update([
+                                'status' => TransactionStatusEnum::SUCCESSFUL->value
+                            ]);
+
+
+                            foreach ($trip_transaction->transactions as $key => $transaction) {
+                                $transaction->update([
+                                    'status' => TransactionStatusEnum::SUCCESSFUL->value
+                                ]);
+                            }
+                        }
+
+
+                        $notification = new NotificationService($user);
+
+                        $notification
+                            ->setBody("Transaction successful, your trip has reserved")
+                            ->setTitle('Trip reserved')
+                            ->setUrl('http://google.com')
+                            ->setType(NotificationTypeEnum::WALLET_FUND)
+                            ->sendPushNotification()
+                            ->sendInAppNotification();
+                    }
+                } catch (\Throwable $th) {
+                    logError("Error occurred @ Trip funding successful webhook", [
+                        'error' => $th
+                    ]);
                 }
             }
         }

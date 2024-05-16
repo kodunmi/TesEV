@@ -28,6 +28,7 @@ class TransactionRepository implements TransactionRepositoryInterface
 
         $transaction->reference = $data['reference'] ?? null;
         $transaction->amount = $data['amount'] ?? 0;
+        $transaction->total_amount = $data['total_amount'] ?? 0;
         $transaction->narration = $data['narration'] ?? null;
         $transaction->title = $data['title'] ?? null;
         $transaction->status = $data['status'] ?? null;
@@ -35,7 +36,10 @@ class TransactionRepository implements TransactionRepositoryInterface
         $transaction->type = $data['type'] ?? null;
         $transaction->channel = $data['channel'] ?? null;
         $transaction->transaction_date = $data['transaction_date'] ?? null;
+        $transaction->tax_amount = $data['tax_amount'] ?? 0.00;
+        $transaction->tax_percentage = $data['tax_percentage'] ?? 0;
         $transaction->meta = $data['meta'] ?? null;
+        $transaction->user_id = $data['user_id'] ?? null;
         $transaction->object = $data['object'] ?? null;
         $transaction->public_id = uuid();
 
@@ -60,13 +64,17 @@ class TransactionRepository implements TransactionRepositoryInterface
 
             $transaction->reference = $data['reference'] ?? $transaction->reference;
             $transaction->amount = $data['amount'] ?? $transaction->amount;
+            $transaction->total_amount = $data['total_amount'] ?? $transaction->total_amount;
             $transaction->narration = $data['narration'] ?? $transaction->narration;
             $transaction->title = $data['title'] ?? $transaction->title;
             $transaction->type = $data['type'] ?? $transaction->type;
             $transaction->channel = $data['channel'] ?? $transaction->channel;
             $transaction->object = $data['object'] ?? $transaction->object;
             $transaction->meta = $data['meta'] ?? $transaction->meta;
+            $transaction->user_id = $data['user_id'] ?? $transaction->user_id;
             $transaction->transaction_date = $data['transaction_date'] ?? $transaction->transaction_date;
+            $transaction->tax_amount = $data['tax_amount'] ?? $transaction->tax_amount;
+            $transaction->tax_percentage = $data['tax_percentage'] ?? $transaction->tax_percentage;
             $transaction->save();
 
             return $transaction;

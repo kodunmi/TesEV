@@ -15,6 +15,7 @@ class Transaction extends Model
     protected $fillable = [
         'reference',
         'amount',
+        'total_amount',
         'narration',
         'title',
         'status',
@@ -25,6 +26,7 @@ class Transaction extends Model
         'transaction_date',
         'meta',
         'object',
+        'user_id'
     ];
 
     protected $casts = [
