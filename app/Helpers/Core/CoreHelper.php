@@ -1,7 +1,10 @@
 <?php
 
+use App\Enum\TransactionStatusEnum;
+use App\Enum\TripStatusEnum;
 use App\Http\Resources\Core\PaginateResource;
 use App\Models\Trip;
+use App\Models\TripTransaction;
 use App\Models\User;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Carbon;
@@ -259,7 +262,7 @@ if (!function_exists('calculateMinutesDifference')) {
         $start = Carbon::parse($startTime);
         $end = Carbon::parse($endTime);
 
-        return  $start->diffInMinutes($end);
+        return  roundToWholeNumber($start->diffInMinutes($end));
     }
 }
 if (!function_exists('calculatePercentageOfValue')) {
@@ -268,7 +271,9 @@ if (!function_exists('calculatePercentageOfValue')) {
         if ($percentage <= 0 || $value <= 0) {
             return 0;
         }
-        return ($percentage / 100) * $value;
+        $p = ($percentage / 100) * $value;
+
+        return roundToWholeNumber($p);
     }
 }
 
@@ -276,5 +281,53 @@ if (!function_exists('pricePerHourToPricePerMinute')) {
     function pricePerHourToPricePerMinute($price)
     {
         return $price / 60;
+    }
+}
+
+if (!function_exists('roundToWholeNumber')) {
+    /**
+     * Round a number to the nearest whole number.
+     *
+     * @param  float  $number
+     * @return int
+     */
+    function roundToWholeNumber($number)
+    {
+        return (int) round($number);
+    }
+}
+
+if (!function_exists('updateTripStatus')) {
+
+    function updateTripStatus($trip, TripStatusEnum $trip_status, TransactionStatusEnum $transaction_status)
+    {
+        try {
+            $trip->update([
+                'status' => $trip_status->value
+            ]);
+
+            $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+
+            if ($trip_transaction) {
+                $trip_transaction->update([
+                    'status' => $transaction_status->value
+                ]);
+
+
+                foreach ($trip_transaction->transactions as $key => $transaction) {
+                    $transaction->update([
+                        'status' => $transaction_status->value
+                    ]);
+                }
+            }
+
+            return true;
+        } catch (\Throwable $th) {
+            logError("Error occurred @ updateTripStatus method in TripService", [
+                'error' => $th
+            ]);
+
+            return false;
+        }
     }
 }
