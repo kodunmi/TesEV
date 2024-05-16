@@ -330,4 +330,16 @@ if (!function_exists('updateTripStatus')) {
             return false;
         }
     }
+
+
+    if (!function_exists('isEndTimeGreaterThanStartTime')) {
+
+        function isEndTimeGreaterThanStartTime($start_time, $end_time)
+        {
+            $start = Carbon::parse($start_time);
+            $end = Carbon::parse($end_time);
+
+            return $end->gt($start);
+        }
+    }
 }
