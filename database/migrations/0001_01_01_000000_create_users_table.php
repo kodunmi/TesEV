@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('gender')->nullable();
             $table->enum('status', ['deactivated', 'pending', 'active'])->default('pending');
             $table->date('date_of_birth')->nullable();
-            $table->integer('wallet')->default(0);
-            $table->integer('subscription_balance')->default(0);
+            $table->double('wallet')->default(0.00);
+            $table->double('subscription_balance')->default(0.00);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('fcm_token')->nullable()->index();
             $table->string('password');

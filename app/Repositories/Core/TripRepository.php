@@ -25,7 +25,9 @@ class TripRepository implements TripRepositoryInterface
         $trip->start_time = $data['start_time'] ?? null;
         $trip->end_time = $data['end_time'] ?? null;
         $trip->parent_trip_id = $data['parent_trip_id'] ?? null;
-        $trip->status = $data['status'] ?? false;
+        $trip->status = $data['status'] ?? 'pending';
+        $trip->tax_amount = $data['tax_amount'] ?? 0;
+        $trip->tax_percentage = $data['tax_percentage'] ?? 0;
 
         $trip->public_id = uuid();
         $trip->booking_id = generateRandomNumber(10);
@@ -47,6 +49,7 @@ class TripRepository implements TripRepositoryInterface
         $trip->start_time = $data['start_time'] ??  $trip->start_time;
         $trip->end_time = $data['end_time'] ??  $trip->end_time;
         $trip->parent_trip_id = $data['parent_trip_id'] ?? $trip->parent_trip_id;
+        $trip->status = $data['status'] ??  $trip->status;
 
         $trip->save();
         return $trip;

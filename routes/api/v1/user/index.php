@@ -47,6 +47,7 @@ Route::prefix('subscriptions')->controller(SubscriptionController::class)->group
 
 Route::prefix('trips')->controller(TripController::class)->group(function () {
     Route::post('/costing', 'getCosting');
+    Route::get('/', 'getTrips');
     Route::post('/', 'createTrip');
 
     Route::prefix('{trip_id}')->group(function () {

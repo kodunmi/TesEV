@@ -1,5 +1,6 @@
 <?php
 
+use App\Enum\TripStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,18 +20,21 @@ return new class extends Migration
             $table->dateTime('start_time')->nullable();
             $table->dateTime('end_time')->nullable();
 
+            $table->dateTime('started_at')->nullable();
+            $table->dateTime('ended_time')->nullable();
+
             $table->boolean('started_trip')->default(false);
             $table->boolean('ended_trip')->default(false);
 
-            $table->foreignUuid('user_id');
-            $table->foreignUuid('vehicle_id');
+            $table->foreignUuid('user_id')->nullable();
+            $table->foreignUuid('vehicle_id')->nullable();
 
             $table->foreignUuid('parent_trip_id')->nullable();
 
-            $table->integer('tax_amount');
-            $table->integer('tax_percentage');
+            $table->double('tax_amount')->default(0.00);
+            $table->double('tax_percentage')->default(0.00);
 
-            $table->boolean('status')->default(false);
+            $table->enum('status', TripStatusEnum::values())->default(TripStatusEnum::PENDING->value); // started, ended, pending, canceled, reserved,
 
             $table->timestamps();
             $table->softDeletes();

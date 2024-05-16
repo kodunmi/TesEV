@@ -130,15 +130,29 @@ class BuildingController extends Controller
 
         $validated = (object) $request->validated();
 
-        $start_time = Carbon::parse($validated->start);
-        $end_time = Carbon::parse($validated->end);
+        $start_time = $validated->start;
+        $end_time = $validated->end;
 
         $vehicles_id = $building->vehicles()->pluck('id');
 
         $trips = $this->tripRepository->query()
             ->whereIn('vehicle_id', $vehicles_id)
-            ->whereRaw('start_time >= ?', [$start_time])
-            ->whereRaw('end_time + INTERVAL \'1 hour\' <= ?', [$end_time])
+            ->where(function ($query) use ($start_time, $end_time) {
+                $query->where(function ($query) use ($start_time) {
+                    $query->where('start_time', '<=', $start_time)
+                        ->where('end_time', '>=', $start_time)
+                        ->whereIn('status', ['started', 'reserved', 'pending']);
+                })->orWhere(function ($query) use ($end_time) {
+                    $query->where('start_time', '<=', $end_time)
+                        ->where('end_time', '>=', $end_time)->whereIn('status', ['started', 'reserved', 'pending']);
+                });
+            })
+            ->orWhere(function ($query) use ($start_time, $end_time) {
+                $query->where('start_time', '>=', $start_time)
+                    ->where('end_time', '<=', $end_time)
+                    ->whereIn('status', ['started', 'reserved', 'pending']);
+            })
+
             ->get();
 
         $available_vehicles = $building->vehicles()->whereNotIn('id', $trips->pluck('vehicle_id'))->paginate(10);

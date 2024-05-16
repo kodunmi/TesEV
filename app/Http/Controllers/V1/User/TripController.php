@@ -10,6 +10,7 @@ use App\Enum\TransactionTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GetCostingRequest;
+use App\Http\Requests\User\AddTimeRequest;
 use App\Http\Requests\User\CreateTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
 use App\Models\TripSetting;
@@ -68,49 +69,23 @@ class TripController extends Controller
         $response = $this->tripService->createTrip($validated);
 
         if (!$response['status']) {
-            return respondError('Error costing trip');
+            return respondError($response['message']);
         }
 
         return respondSuccess($response['message'], $response['data']);
-
-
-
-        // $trip = $this->tripRepository->create([
-        //     'user_id' => auth()->id(),
-        //     'vehicle_id' => $validated->vehicle_id,
-        //     'start_time' => $validated->start_time,
-        //     'end_time' => $validated->end_time,
-        // ]);
-
-
-        // $payment = TripTransaction::create([
-        //     'trip_id' => $trip->id,
-        //     'building_id' => $trip->vehicle->building->id,
-        //     'vehicle_id' => $trip->vehicle->id,
-        //     'user_id' => auth()->id(),
-        //     'reference' => generateReference(),
-        //     'public_id' => uuid(),
-        //     'payment_type' => $payment_type,
-        //     'amount' => $total_amount,
-        // ]);
-
-        // $transaction = $this->transactionRepository->create(
-        //     [
-        //         'amount' => $payment->amount,
-        //         'title' => "Trip payment",
-        //         'narration' => "Payment for trip",
-        //         'status' => TransactionStatusEnum::PENDING->value,
-        //         'type' => TransactionTypeEnum::TRIP->value,
-        //         'entry' => "debit",
-        //         'channel' => 'web',
-        //     ]
-        // );
-
-        // $payment->transaction()->save($transaction);
     }
 
-    public function addExtraTime()
+    public function addExtraTime(AddTimeRequest $request)
     {
+        $validated = (object) $request->validated();
+
+        $response = $this->tripService->addExtraTime($validated);
+
+        if (!$response['status']) {
+            return respondError($response['message']);
+        }
+
+        return respondSuccess($response['message'], $response['data']);
     }
 
     public function startTrip()
