@@ -51,8 +51,12 @@ Route::prefix('trips')->controller(TripController::class)->group(function () {
     Route::post('/', 'createTrip');
 
     Route::prefix('{trip_id}')->group(function () {
+        Route::get('/', 'getTrip');
         Route::post('/add', 'addExtraTime');
         Route::post('/report', 'reportTrip');
+        Route::post('/start', 'startTrip');
+        Route::post('/end', 'endTrip');
+        Route::post('/cancel', 'cancelTrip');
     });
 });
 

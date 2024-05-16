@@ -31,7 +31,11 @@ class Transaction extends Model
 
     protected $casts = [
         'meta' => 'array',
-        'object' => 'array'
+        'object' => 'array',
+        'amount' => 'double',
+        'total_amount' => 'double',
+        'tax_amount' => 'double',
+        'tax_percentage' => 'double',
     ];
 
 

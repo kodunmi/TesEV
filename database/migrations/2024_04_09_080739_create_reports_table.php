@@ -17,6 +17,8 @@ return new class extends Migration
             $table->longText('description')->nullable();
             $table->string('type')->nullable(); // before or after
             $table->uuid('public_id');
+
+            $table->softdeletes();
             $table->timestamps();
         });
     }

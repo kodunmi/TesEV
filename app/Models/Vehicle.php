@@ -35,6 +35,13 @@ class Vehicle extends Model
         'battery_warranty', // The warranty coverage for the vehicle's battery (e.g., in years or miles/kilometers)
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'price_per_hour' => 'double',
+        ];
+    }
+
     public function building(): BelongsTo
     {
         return $this->belongsTo(Building::class);
