@@ -29,6 +29,16 @@ class TripTransaction extends Model
         'tax_percentage',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'tax_percentage' => 'double',
+            'amount' => 'double',
+            'tax_amount' => 'double',
+            'total_amount' => 'double',
+        ];
+    }
+
 
     public function transactions(): MorphMany
     {

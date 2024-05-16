@@ -20,6 +20,7 @@ return new class extends Migration
             $table->boolean('distance_covered')->default(false);
             $table->boolean('remove_belongings')->default(false);
             $table->boolean('remove_trash')->default(false);
+            $table->boolean('plug_vehicle')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

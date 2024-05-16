@@ -18,6 +18,7 @@ class TripMetaData extends Model
         'public_id',
         'distance_covered',
         'remove_belongings',
-        'remove_trash'
+        'remove_trash',
+        'plug_vehicle'
     ];
 }

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->dateTime('end_time')->nullable();
 
             $table->dateTime('started_at')->nullable();
-            $table->dateTime('ended_time')->nullable();
+            $table->dateTime('ended_at')->nullable();
 
             $table->boolean('started_trip')->default(false);
             $table->boolean('ended_trip')->default(false);
@@ -35,6 +35,10 @@ return new class extends Migration
             $table->double('tax_percentage')->default(0.00);
 
             $table->enum('status', TripStatusEnum::values())->default(TripStatusEnum::PENDING->value); // started, ended, pending, canceled, reserved,
+
+            $table->boolean('remove_belongings')->default(false);
+            $table->boolean('remove_trash')->default(false);
+            $table->boolean('plug_vehicle')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

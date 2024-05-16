@@ -183,6 +183,14 @@ class TripService
 
         $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
 
+        if (!isEndTimeGreaterThanStartTime($validated->start_time, $validated->end_time)) {
+            return [
+                'status' => false,
+                'message' => 'End time should be in the future',
+                'data' => null
+            ];
+        }
+
         $mins_difference = calculateMinutesDifference($validated->start_time, $validated->end_time);
 
         $price_per_minute = roundToWholeNumber(dollarToCent($vehicle->price_per_hour)  / 60);
@@ -560,7 +568,7 @@ class TripService
                             'amount' => $total_amount_before_tax,
                             'total_amount' => $total_amount,
                             'title' => "Payment for trip",
-                            'narration' => "Part payment of " . Number::currency(centToDollar($total_amount))  . " for trip " . $trip->booking_id,
+                            'narration' => "Payment of " . Number::currency(centToDollar($total_amount))  . " for trip " . $trip->booking_id,
                             'status' => TransactionStatusEnum::SUCCESSFUL->value,
                             'type' => TransactionTypeEnum::TRIP->value,
                             'entry' => "debit",
@@ -740,26 +748,31 @@ class TripService
         $start_time = $data->start_time;
         $end_time = $data->end_time;
 
+        $vehicle_id = $data->vehicle_id;
+
         // Add 1 hour to both start time and end time to create the buffer
         $start_time_with_buffer = date('Y-m-d H:i:s', strtotime($start_time . ' -1 hour'));
         $end_time_with_buffer = date('Y-m-d H:i:s', strtotime($end_time . ' +1 hour'));
 
         $check = $this->tripRepository->query()
-            ->where('vehicle_id', $data->vehicle_id)
-            ->where(function ($query) use ($start_time_with_buffer, $end_time_with_buffer) {
-                $query->where(function ($query) use ($start_time_with_buffer, $end_time_with_buffer) {
+
+            ->where(function ($query) use ($start_time_with_buffer, $end_time_with_buffer, $vehicle_id) {
+                $query->where(function ($query) use ($start_time_with_buffer, $vehicle_id) {
                     $query->where('start_time', '<=', $start_time_with_buffer)
                         ->where('end_time', '>=', $start_time_with_buffer)
+                        ->where('vehicle_id', $vehicle_id)
                         ->whereIn('status', ['started', 'reserved', 'pending']);
-                })->orWhere(function ($query) use ($start_time_with_buffer, $end_time_with_buffer) {
+                })->orWhere(function ($query) use ($vehicle_id, $end_time_with_buffer) {
                     $query->where('start_time', '<=', $end_time_with_buffer)
                         ->where('end_time', '>=', $end_time_with_buffer)
+                        ->where('vehicle_id', $vehicle_id)
                         ->whereIn('status', ['started', 'reserved', 'pending']);
                 });
             })
-            ->orWhere(function ($query) use ($start_time_with_buffer, $end_time_with_buffer) {
+            ->orWhere(function ($query) use ($start_time_with_buffer, $end_time_with_buffer, $vehicle_id) {
                 $query->where('start_time', '>=', $start_time_with_buffer)
                     ->where('end_time', '<=', $end_time_with_buffer)
+                    ->where('vehicle_id', $vehicle_id)
                     ->whereIn('status', ['started', 'reserved', 'pending']);
             })
             ->exists();

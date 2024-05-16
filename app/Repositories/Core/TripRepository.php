@@ -28,6 +28,9 @@ class TripRepository implements TripRepositoryInterface
         $trip->status = $data['status'] ?? 'pending';
         $trip->tax_amount = $data['tax_amount'] ?? 0;
         $trip->tax_percentage = $data['tax_percentage'] ?? 0;
+        $trip->tax_percentage = $data['tax_percentage'] ?? 0;
+
+
 
         $trip->public_id = uuid();
         $trip->booking_id = generateRandomNumber(10);

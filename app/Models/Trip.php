@@ -21,12 +21,19 @@ class Trip extends Model
         'vehicle_id',
         'start_time',
         'end_time',
+        'started_at',
+        'ended_at',
         'public_id',
         'booking_id',
         'parent_trip_id',
         'tax_amount',
         'tax_percentage',
         'status'
+    ];
+
+    protected $casts = [
+        'tax_amount' => 'double',
+        'tax_percentage' => 'double',
     ];
 
     public function user(): BelongsTo
@@ -57,5 +64,10 @@ class Trip extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
+    }
+
+    public function tripTransactions(): HasMany
+    {
+        return $this->hasMany(TripTransaction::class);
     }
 }
