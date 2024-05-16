@@ -8,11 +8,15 @@ use App\Enum\PaymentTypeEnum;
 use App\Enum\TransactionStatusEnum;
 use App\Enum\TransactionTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
+use App\Enum\TripStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GetCostingRequest;
 use App\Http\Requests\User\AddTimeRequest;
 use App\Http\Requests\User\CreateTripRequest;
+use App\Http\Requests\User\EndTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
+use App\Http\Resources\Core\TripResource;
+use App\Models\TripMetaData;
 use App\Models\TripSetting;
 use App\Models\TripTransaction;
 use App\Repositories\Core\ReportRepository;
@@ -44,6 +48,17 @@ class TripController extends Controller
         return respondSuccess('Trips fetched successfully', $trips);
     }
 
+
+    public function getTrip($trip_id)
+    {
+        $trip = $this->tripRepository->findById($trip_id);
+
+        if (!$trip) {
+            return respondError('Trip not found', null, 404);
+        }
+
+        return respondSuccess('Trips fetched successfully', new TripResource($trip));
+    }
 
 
     public function getCosting(GetCostingRequest $request)
@@ -88,12 +103,97 @@ class TripController extends Controller
         return respondSuccess($response['message'], $response['data']);
     }
 
-    public function startTrip()
+    public function startTrip($trip_id)
     {
+
+        try {
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+                return respondError('Trip not found', null, 404);
+            }
+
+            if ($trip->started_at) {
+                return respondError('Trip already started', null, 400);
+            }
+
+            $trip->update([
+                'started_at' => now()
+            ]);
+
+            $trip->refresh();
+
+            return respondSuccess('Trip started successfully', new TripResource($trip));
+        } catch (\Throwable $th) {
+            return respondError('Error starting trip, try again', null, 400);
+        }
     }
 
-    public function endTrip()
+    public function endTrip(EndTripRequest $request, $trip_id)
     {
+        try {
+
+            $validated = (object) $request->validated();
+
+
+
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+                return respondError('Trip not found', null, 404);
+            }
+
+            if (!$trip->started_at) {
+                return respondError('You have not started the trip', null, 400);
+            }
+
+            if ($trip->ended_at) {
+                return respondError('Trip already ended', null, 400);
+            }
+
+            $trip->update([
+                'ended_at' => now(),
+                'status' => TripStatusEnum::ENDED->value
+            ]);
+
+            $trip_meta =  TripMetaData::make([
+                'remove_belongings' => $validated->remove_belongings,
+                'remove_trash' => $validated->remove_trash,
+                'plug_vehicle' => $validated->plug_vehicle,
+                'public_id' => uuid()
+            ]);
+
+            $trip->tripMetaData()->save($trip_meta);
+
+            $trip->refresh();
+
+            return respondSuccess('Trip ended successfully', new TripResource($trip));
+        } catch (\Throwable $th) {
+            logError($th->getMessage(), ['error' => $th]);
+            return respondError('Error starting trip, try again', null, 400);
+        }
+    }
+
+    public function cancelTrip($trip_id)
+    {
+        try {
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+                return respondError('Trip not found', null, 404);
+            }
+
+            $trip->update([
+                'ended_at' => now()
+            ]);
+
+            $trip->refresh();
+
+            return respondSuccess('Trip canceled successfully', $trip);
+        } catch (\Throwable $th) {
+            logError($th->getMessage(), ['error' => $th]);
+            return respondError('Error starting trip, try again', null, 400);
+        }
     }
 
     public function payForTrip()
