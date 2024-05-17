@@ -14,6 +14,7 @@ use App\Enum\TransactionTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
 use App\Enum\TripStatusEnum;
 use App\Http\Resources\Core\VehicleResource;
+use App\Jobs\Core\ProcessRefundJob;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\TripSetting;
@@ -428,6 +429,10 @@ class TripService
                         ];
                     }
 
+                    $transaction_two->update([
+                        'object' => $charge_card['data']
+                    ]);
+
 
                     $notification = new NotificationService($user);
 
@@ -673,6 +678,10 @@ class TripService
                     ];
                 }
 
+                $transaction->update([
+                    'object' => $charge_card['data']
+                ]);
+
 
                 $notification = new NotificationService($user);
 
@@ -741,6 +750,48 @@ class TripService
             ->exists();
 
         return !$check;
+    }
+
+    public function cancelTrip($trip_id)
+    {
+
+        try {
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+
+                return [
+                    'status' => false,
+                    'message' => 'Trip not found',
+                    'data' => null
+                ];
+            }
+
+            // check if trip has started
+            if (!$trip->status == TripStatusEnum::RESERVED) {
+                return [
+                    'status' => false,
+                    'message' => "Trip $trip->status, you cannot cancel trip",
+                    'data' => null
+                ];
+            }
+
+            ProcessRefundJob::dispatch($trip_id);
+
+            return [
+                'status' => true,
+                'message' => "Refund process has started successfully",
+                'data' => null
+            ];
+        } catch (\Throwable $th) {
+            logError($th->getMessage(), ['error' => $th]);
+
+            return [
+                'status' => false,
+                'message' => 'Error cancelling trip',
+                'data' => null
+            ];
+        }
     }
 
     private function checkVehicleAvailability($data)

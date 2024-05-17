@@ -13,6 +13,8 @@ class TripSetting extends Model
     protected $fillable = [
         'tax_percentage',
         'min_extension_time_buffer',
-        'subscriber_price_per_hour'
+        'subscriber_price_per_hour',
+        'cancellation_grace_hour',
+        'late_cancellation_charge_percent'
     ];
 }

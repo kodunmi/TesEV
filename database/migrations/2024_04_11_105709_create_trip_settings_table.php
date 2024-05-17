@@ -16,6 +16,8 @@ return new class extends Migration
             $table->integer('tax_percentage');
             $table->integer('min_extension_time_buffer');
             $table->integer('subscriber_price_per_hour');
+            $table->integer('cancellation_grace_hour');
+            $table->integer('late_cancellation_charge_percent');
             $table->timestamps();
         });
     }

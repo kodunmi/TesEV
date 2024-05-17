@@ -77,6 +77,10 @@ class WalletController extends Controller
                 return respondError($resp['message'], $resp['data']);
             }
 
+            $transaction->update([
+                'object' => $resp['data']
+            ]);
+
             DB::commit();
 
             return respondSuccess($resp['message'], $resp['data']);

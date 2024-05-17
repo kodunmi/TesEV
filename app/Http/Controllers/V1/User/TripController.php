@@ -15,6 +15,7 @@ use App\Http\Requests\User\AddTimeRequest;
 use App\Http\Requests\User\CreateTripRequest;
 use App\Http\Requests\User\EndTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
+use App\Http\Resources\Core\MultiTripResource;
 use App\Http\Resources\Core\TripResource;
 use App\Models\TripMetaData;
 use App\Models\TripSetting;
@@ -45,7 +46,7 @@ class TripController extends Controller
     {
         $trips = $this->tripRepository->query()->where('user_id', auth()->id())->paginate(10);
 
-        return respondSuccess('Trips fetched successfully', $trips);
+        return respondSuccess('Trips fetched successfully', MultiTripResource::collection($trips));
     }
 
 
@@ -176,24 +177,14 @@ class TripController extends Controller
 
     public function cancelTrip($trip_id)
     {
-        try {
-            $trip = $this->tripRepository->findById($trip_id);
 
-            if (!$trip) {
-                return respondError('Trip not found', null, 404);
-            }
+        $response = $this->tripService->cancelTrip($trip_id);
 
-            $trip->update([
-                'ended_at' => now()
-            ]);
-
-            $trip->refresh();
-
-            return respondSuccess('Trip canceled successfully', $trip);
-        } catch (\Throwable $th) {
-            logError($th->getMessage(), ['error' => $th]);
-            return respondError('Error starting trip, try again', null, 400);
+        if (!$response['status']) {
+            return respondError('Error costing trip');
         }
+
+        return respondSuccess($response['message'], $response['data']);
     }
 
     public function payForTrip()

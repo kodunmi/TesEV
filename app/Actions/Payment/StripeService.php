@@ -265,7 +265,7 @@ class StripeService
             return [
                 "status" => true,
                 "message" => "Transaction in progress",
-                "data" => null
+                "data" => $payment
             ];
         } catch (\Throwable $th) {
             logError($th->getMessage(), ['error' => $th]);
