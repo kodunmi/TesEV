@@ -20,11 +20,13 @@ class GeneralSeeder extends Seeder
                 'first_name' => 'Lekan',
                 'last_name' => 'Kodunmi',
                 'email' => 'lekan126@gmail.com',
+                'wallet' => 2000000000
             ],
             [
                 'first_name' => 'Muyiwa',
                 'last_name' => 'Emmanuel',
                 'email' => 'emmanuelmuyiwa19@gmail.com',
+                'wallet' => 2000000000
             ]
         ]);
 
