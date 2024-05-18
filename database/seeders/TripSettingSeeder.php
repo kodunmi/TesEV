@@ -19,7 +19,9 @@ class TripSettingSeeder extends Seeder
             TripSetting::create([
                 'tax_percentage' => 15,
                 'min_extension_time_buffer' => 20,
-                'subscriber_price_per_hour' => 10
+                'subscriber_price_per_hour' => 10,
+                'cancellation_grace_hour' => 2,
+                'late_cancellation_charge_percent' => 15
             ]);
         } catch (\Throwable $th) {
             dd($th->getMessage());
