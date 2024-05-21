@@ -342,4 +342,49 @@ if (!function_exists('updateTripStatus')) {
             return $end->gt($start);
         }
     }
+
+
+    if (!function_exists('calculateTimeUsed')) {
+
+        function calculateTimeUsed($start_time)
+        {
+
+            $start = Carbon::parse($start_time);
+            $now = Carbon::now();
+            if ($now < $start) {
+                return '00:00:00';
+            }
+            $interval = $start->diff($now);
+
+            $hours = $interval->days * 24 + $interval->h;
+            $minutes = $interval->i;
+            $seconds = $interval->s;
+
+            return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+        }
+    }
+
+    if (!function_exists('calculatePercentageOfTimeUsed')) {
+
+        function calculatePercentageOfTimeUsed($start_time, $end_time)
+        {
+            $start = Carbon::parse($start_time);
+            $end = Carbon::parse($end_time);
+            $now = Carbon::now();
+
+            if ($end < $start || $now < $start) {
+                return 0;
+            }
+
+            $total_minutes = $start->diffInMinutes($end);
+            $used_minutes = $start->diffInMinutes($now);
+
+            if ($total_minutes == 0) {
+                return 0;
+            }
+
+            $percentage_used = ($used_minutes / $total_minutes) * 100;
+            return $percentage_used;
+        }
+    }
 }

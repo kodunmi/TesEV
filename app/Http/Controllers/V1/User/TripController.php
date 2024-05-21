@@ -44,7 +44,7 @@ class TripController extends Controller
 
     public function getTrips()
     {
-        $trips = $this->tripRepository->query()->where('user_id', auth()->id())->paginate(10);
+        $trips = $this->tripRepository->query()->where('user_id', auth()->id())->where('status', TripStatusEnum::STARTED->value)->orWhere('status', TripStatusEnum::RESERVED->value)->paginate(10);
 
         return respondSuccess('Trips fetched successfully', MultiTripResource::collection($trips));
     }
@@ -91,11 +91,11 @@ class TripController extends Controller
         return respondSuccess($response['message'], $response['data']);
     }
 
-    public function addExtraTime(AddTimeRequest $request)
+    public function addExtraTime(AddTimeRequest $request, $trip_id)
     {
         $validated = (object) $request->validated();
 
-        $response = $this->tripService->addExtraTime($validated);
+        $response = $this->tripService->addExtraTime($validated, $trip_id);
 
         if (!$response['status']) {
             return respondError($response['message']);
@@ -191,11 +191,11 @@ class TripController extends Controller
     {
     }
 
-    public function reportTrip(ReportTripRequest $request)
+    public function reportTrip(ReportTripRequest $request, $trip_id)
     {
         $validated = (object) $request->validated();
 
-        $response = $this->tripService->reportTrip($validated);
+        $response = $this->tripService->reportTrip($validated, $trip_id);
 
         if (!$response['status']) {
             return respondError($response['message']);

@@ -128,11 +128,21 @@ class TripService
         ];
     }
 
-    public function reportTrip($validated)
+    public function reportTrip($validated, $trip_id)
     {
         DB::beginTransaction();
 
         try {
+
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+                return [
+                    'status' => false,
+                    'message' => 'Trip not found',
+                    'data' => null
+                ];
+            }
 
             $created = $this->reportRepository->create([
                 'trip_id' => $validated->trip_id,
@@ -708,9 +718,9 @@ class TripService
         ];
     }
 
-    public function addExtraTime($validated)
+    public function addExtraTime($validated, $trip_id)
     {
-        $trip = $this->tripRepository->findById($validated->trip_id);
+        $trip = $this->tripRepository->findById($trip_id);
 
 
         $next_reservation = $this->tripRepository->query()
@@ -720,7 +730,27 @@ class TripService
             ->orderBy('start_time', 'asc')
             ->first();
 
-        dd($next_reservation);
+
+        $time_between_current_and_next_reservation =  calculateMinutesDifference($trip->end_time, $next_reservation->start_time);
+
+
+
+        $max_reservation_time = 4;
+
+        $max_reservation_time_in_minutes = $max_reservation_time * 60;
+
+
+        if ($max_reservation_time_in_minutes < $time_between_current_and_next_reservation) {
+            return [
+                'status' => false,
+                'message' => "Sorry the maximum extra time you can add is $max_reservation_time",
+                'data' => null
+            ];
+        }
+
+
+
+        dd($time_between_current_and_next_reservation / 60);
     }
 
     private function checkVehicleAvailability2($data)

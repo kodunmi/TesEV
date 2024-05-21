@@ -24,7 +24,6 @@ class ReportTripRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'trip_id' => ['required', 'exists:trips,id'],
             'description' => ['required', 'string'],
             'type' => ['required', Rule::in(['before', 'after'])],
             'images' => 'required|array',

@@ -25,7 +25,6 @@ class AddTimeRequest extends FormRequest
     {
         return [
             'minutes' => ['required', 'numeric'],
-            'trip_id' => ['uuid', 'required', Rule::exists('trips', 'id')],
             'charge_from' => ['nullable', Rule::in(PaymentTypeEnum::values())]
         ];
     }
