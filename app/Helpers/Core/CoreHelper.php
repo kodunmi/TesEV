@@ -299,14 +299,14 @@ if (!function_exists('roundToWholeNumber')) {
 
 if (!function_exists('updateTripStatus')) {
 
-    function updateTripStatus($trip, TripStatusEnum $trip_status, TransactionStatusEnum $transaction_status)
+    function updateTripStatus($trip, $payment, TripStatusEnum $trip_status, TransactionStatusEnum $transaction_status)
     {
         try {
             $trip->update([
                 'status' => $trip_status->value
             ]);
 
-            $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+            $trip_transaction = TripTransaction::find($payment->id);
 
             if ($trip_transaction) {
                 $trip_transaction->update([

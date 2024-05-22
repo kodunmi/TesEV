@@ -24,7 +24,15 @@ return new class extends Migration
             $table->double('tax_amount')->default(0.00);
             $table->double('tax_percentage')->default(0.00);
             $table->double('amount')->default(0.00);
+
+            $table->double('rate')->default(0.00);
+
             $table->double('total_amount')->default(0.00);
+
+            $table->dateTime('start_time')->nullable();
+            $table->dateTime('end_time')->nullable();
+
+
 
             $table->softdeletes();
             $table->timestamps();

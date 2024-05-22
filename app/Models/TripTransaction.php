@@ -27,6 +27,9 @@ class TripTransaction extends Model
         'public_id',
         'tax_amount',
         'tax_percentage',
+        'start_time',
+        'end_time',
+        'rate'
     ];
 
     protected function casts(): array

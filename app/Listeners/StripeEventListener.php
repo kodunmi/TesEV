@@ -235,6 +235,7 @@ class StripeEventListener
 
                 try {
                     $trip_id = $event->payload['data']['object']['metadata']['trip_id'];
+                    $trip_transaction_id = $event->payload['data']['object']['metadata']['trip_transaction_id'];
 
                     $trip = $this->tripRepository->findById($trip_id);
 
@@ -246,11 +247,13 @@ class StripeEventListener
                             'subscription_balance' => 0
                         ]);
 
-                        $trip->update([
-                            'status' => TripStatusEnum::RESERVED->value
-                        ]);
+                        if ($trip->status !== TripStatusEnum::STARTED->value) {
+                            $trip->update([
+                                'status' => TripStatusEnum::RESERVED->value
+                            ]);
+                        }
 
-                        $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+                        $trip_transaction = TripTransaction::find($trip_transaction_id);
 
                         if ($trip_transaction) {
                             $trip_transaction->update([
