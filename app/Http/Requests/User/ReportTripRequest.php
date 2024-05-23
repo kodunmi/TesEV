@@ -5,6 +5,8 @@ namespace App\Http\Requests\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ReportTripRequest extends FormRequest
 {
@@ -29,5 +31,13 @@ class ReportTripRequest extends FormRequest
             'images' => 'required|array',
             'images*' => [File::image()->max('1mb')]
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        $message = 'Invalid data provided';
+        $errors = (new ValidationException($validator))->errors();
+
+        return respondValidationError($message, $errors);
     }
 }
