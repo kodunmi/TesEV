@@ -29,7 +29,8 @@ class TripTransaction extends Model
         'tax_percentage',
         'start_time',
         'end_time',
-        'rate'
+        'rate',
+        'type'
     ];
 
     protected function casts(): array

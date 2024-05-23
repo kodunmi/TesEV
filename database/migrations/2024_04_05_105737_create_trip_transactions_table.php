@@ -1,6 +1,7 @@
 <?php
 
 use App\Enum\PaymentTypeEnum;
+use App\Enum\TripTransactionTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->double('tax_amount')->default(0.00);
             $table->double('tax_percentage')->default(0.00);
             $table->double('amount')->default(0.00);
+
+            $table->enum('type', TripTransactionTypeEnum::values())->default(TripTransactionTypeEnum::TRIP->value);
 
             $table->double('rate')->default(0.00);
 

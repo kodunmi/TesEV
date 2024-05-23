@@ -25,7 +25,6 @@ class AddTimeRequest extends FormRequest
     {
         return [
             'minutes' => ['required', 'numeric'],
-            'charge_from' => ['nullable', Rule::in(PaymentTypeEnum::values())]
         ];
     }
 }
