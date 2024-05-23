@@ -146,7 +146,7 @@ class TripService
             }
 
             $created = $this->reportRepository->create([
-                'trip_id' => $validated->trip_id,
+                'trip_id' => $trip_id,
                 'description' => $validated->description,
                 'type' => $validated->type,
             ]);
@@ -157,7 +157,7 @@ class TripService
                     provider: CloudTypeEnum::CLOUDINARY,
                     folder: 'reports',
                     owner_id: $created->id,
-                    name: "report-for-trip" . $validated->trip_id,
+                    name: "report-for-trip" . $trip_id,
                     type: 'reports',
                     extension: $image->getClientOriginalExtension()
                 );
