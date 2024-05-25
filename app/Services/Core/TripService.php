@@ -492,7 +492,7 @@ class TripService
                         'public_id' => uuid(),
                         'status' => TransactionStatusEnum::SUCCESSFUL->value,
                         'amount' => $total_amount_before_tax,
-                        'amount' => $total_amount_before_tax,
+                        'total_amount' => $total_amount_before_tax,
                         'tax_amount' => 0.00,
                         'tax_percentage' => 0,
                         'start_time' => $validated->start_time,
@@ -505,6 +505,7 @@ class TripService
                         [
                             'user_id' => $user->id,
                             'amount' => $total_amount_before_tax,
+                            'total_amount' => $total_amount_before_tax,
                             'title' => "Payment for trip",
                             'narration' => "Part payment of " . Number::currency(centToDollar($total_amount_before_tax))  . " for trip " . $trip->booking_id,
                             'status' => TransactionStatusEnum::SUCCESSFUL->value,
@@ -734,547 +735,6 @@ class TripService
         ];
     }
 
-    public function addExtraTime2($validated, $trip_id)
-    {
-        $trip = $this->tripRepository->findById($trip_id);
-
-        $trip_start_time_plus_buffer = Carbon::parse($trip->end_time)->addHour()->toDayDateTimeString();
-
-        $next_reservation = $this->tripRepository->query()
-            ->where('vehicle_id', $trip->vehicle_id)
-            ->where('start_time', '>', $trip->end_time)
-            ->whereIn('status', ['reserved', 'pending'])
-            ->orderBy('start_time', 'asc')
-            ->first();
-
-        $time_between_current_and_next_reservation =  calculateMinutesDifference($trip_start_time_plus_buffer, $next_reservation->start_time);
-
-        $time_between_current_and_next_reservation_hour = $time_between_current_and_next_reservation / 60;
-
-        $max_reservation_time = 4;
-
-        $max_reservation_time_in_minutes = $max_reservation_time * 60;
-
-        $minutes_to_be_added = $validated->minutes;
-
-
-        if ($minutes_to_be_added > $max_reservation_time_in_minutes - 1) {
-            return [
-                'status' => false,
-                'message' => "Sorry the maximum extra time you can add is $max_reservation_time",
-                'data' => null
-            ];
-        }
-
-        if ($time_between_current_and_next_reservation < $minutes_to_be_added) {
-            return [
-                'status' => false,
-                'message' => "Please add time within {$time_between_current_and_next_reservation_hour} hour(s) range",
-                'data' => null
-            ];
-        }
-
-        $user = $this->userRepository->findById(auth()->id());
-
-        $product = Product::all()->first();
-
-        $subscribed = $user->subscribed($product->stripe_id);
-
-        $settings = TripSetting::first();
-
-        $extra_time_start_time = $trip->end_time;
-        $extra_time_end_time =  Carbon::parse($trip->end_time)->addMinutes($minutes_to_be_added);
-
-        $vehicle = $this->vehicleRepository->findById($trip->vehicle_id);
-
-
-        $mins_difference = calculateMinutesDifference($extra_time_start_time, $extra_time_end_time);
-
-        $price_per_minute = roundToWholeNumber(dollarToCent($vehicle->price_per_hour)  / 60);
-
-
-        $total_amount_before_tax = $mins_difference * $price_per_minute;
-
-        $total_amount = $total_amount_before_tax + calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax);
-
-
-        if ($subscribed) {
-
-            $total_amount_before_tax = $minutes_to_be_added * roundToWholeNumber(dollarToCent(pricePerHourToPricePerMinute($settings->subscriber_price_per_hour)));
-
-            $total_amount = $total_amount_before_tax + calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax);
-
-
-            if ($user->subscription_balance < $total_amount) {
-
-                $outstanding_after_subscription_balance_deduction_before_tax = $total_amount_before_tax - $user->subscription_balance;
-                $outstanding_after_subscription_balance_deduction_after_tax =  $outstanding_after_subscription_balance_deduction_before_tax + calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax);
-
-
-                if (!isset($validated->charge_from)) {
-                    return [
-                        'status' => false,
-                        'message' => 'Subscription cannot cover trip, select where to charge outstanding.',
-                        'data' => null
-                    ];
-                } elseif ($validated->charge_from === PaymentTypeEnum::WALLET->value) {
-                    if ($user->wallet < $outstanding_after_subscription_balance_deduction_after_tax) {
-                        return [
-                            'status' => false,
-                            'message' => 'The amount in wallet cannot cover outstanding, please select another payment method.',
-                            'data' => null
-                        ];
-                    }
-
-                    // remove from sub and wallet
-                    $removed_charge =  $user->update([
-                        'subscription_balance' => 0,
-                        'wallet' => $user->wallet - $outstanding_after_subscription_balance_deduction_after_tax
-                    ]);
-
-                    if ($removed_charge) {
-                        $trip = $this->tripRepository->update($trip_id, [
-                            'end_time' => $extra_time_end_time,
-                        ]);
-
-                        $payment = TripTransaction::create([
-                            'trip_id' => $trip->id,
-                            'building_id' => $trip->vehicle->building->id,
-                            'vehicle_id' => $trip->vehicle->id,
-                            'user_id' => auth()->id(),
-                            'reference' => generateReference(),
-                            'public_id' => uuid(),
-                            'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                            'amount' => $total_amount_before_tax,
-                            'total_amount' => $total_amount,
-                            'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
-                            'tax_percentage' => $settings->tax_percentage,
-                            'start_time' => $extra_time_start_time,
-                            'end_time' => $extra_time_end_time,
-                            'rate' => $vehicle->price_per_hour
-                            // 'rate' => $settings->subscriber_price_per_hour
-                        ]);
-
-
-                        $transaction_one = $this->transactionRepository->create(
-                            [
-                                'user_id' => $user->id,
-                                'amount' => $user->subscription_balance,
-                                'total_amount' => $user->subscription_balance,
-                                'title' => "Payment for trip",
-                                'narration' => "Part payment of " . Number::currency(centToDollar($user->subscription_balance))  . " for trip " . $trip->booking_id,
-                                'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                                'type' => TransactionTypeEnum::TRIP->value,
-                                'entry' => "debit",
-                                'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
-                                'tax_amount' => 0.00,
-                                'tax_percentage' => 0
-                            ]
-                        );
-
-                        $transaction_two = $this->transactionRepository->create(
-                            [
-                                'user_id' => $user->id,
-                                'amount' => $outstanding_after_subscription_balance_deduction_before_tax,
-                                'total_amount' => $outstanding_after_subscription_balance_deduction_after_tax,
-                                'title' => "Payment for trip",
-                                'narration' => "Part payment of " . Number::currency(centToDollar($outstanding_after_subscription_balance_deduction_after_tax))  . " for trip " . $trip->booking_id,
-                                'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                                'type' => TransactionTypeEnum::TRIP->value,
-                                'entry' => "debit",
-                                'channel' => PaymentTypeEnum::WALLET->value,
-                                'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
-                                'tax_percentage' => $settings->tax_percentage
-                            ]
-                        );
-
-                        $payment->transactions()->saveMany(
-                            $transaction_one,
-                            $transaction_two
-                        );
-
-
-                        $notification = new NotificationService($user);
-
-                        $notification
-                            ->setBody("Your trip has been reserved successfully, your booking id is $trip->booking_id")
-                            ->setTitle('Trip booked successfully')
-                            ->setUrl('http://google.com')
-                            ->setType(NotificationTypeEnum::TRIP_BOOKED)
-                            ->sendPushNotification()
-                            ->sendInAppNotification();
-
-                        return [
-                            'status' => true,
-                            'message' => "Your trip has been reserved successfully, your booking id is $trip->booking_id",
-                            'data' => $trip
-                        ];
-                    }
-                } elseif ($validated->charge_from === PaymentTypeEnum::CARD->value) {
-
-                    // get active card
-                    $active_card = $user->activeCard;
-
-                    if (!$active_card) {
-                        return [
-                            'status' => false,
-                            'message' => 'You need to have an active card for card transactions',
-                            'data' => null
-                        ];
-                    }
-
-                    $trip = $this->tripRepository->update($trip_id, [
-                        'end_time' => $extra_time_end_time,
-                    ]);
-
-                    $payment = TripTransaction::create([
-                        'trip_id' => $trip->id,
-                        'building_id' => $trip->vehicle->building->id,
-                        'vehicle_id' => $trip->vehicle->id,
-                        'user_id' => $user->id,
-                        'status' => TransactionStatusEnum::PENDING->value,
-                        'reference' => generateReference(),
-                        'public_id' => uuid(),
-                        'amount' => $total_amount_before_tax,
-                        'total_amount' => $total_amount,
-                        'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
-                        'tax_percentage' => $settings->tax_percentage,
-                        'start_time' => $extra_time_start_time,
-                        'end_time' => $extra_time_end_time,
-                        'rate' => $vehicle->price_per_hour
-                    ]);
-
-
-                    $transaction_one = $this->transactionRepository->create(
-                        [
-                            'user_id' => $user->id,
-                            'amount' => $user->subscription_balance,
-                            'total_amount' => $user->subscription_balance,
-                            'title' => "Payment for trip",
-                            'narration' => "Part payment of " . Number::currency(centToDollar($user->subscription_balance))  . " for trip " . $trip->booking_id,
-                            'status' => TransactionStatusEnum::PENDING->value,
-                            'type' => TransactionTypeEnum::TRIP->value,
-                            'entry' => "debit",
-                            'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
-                            'tax_amount' => 0.00,
-                            'tax_percentage' => 0
-                        ]
-                    );
-
-                    $transaction_two = $this->transactionRepository->create(
-                        [
-                            'user_id' => $user->id,
-                            'amount' => $outstanding_after_subscription_balance_deduction_before_tax,
-                            'total_amount' => $outstanding_after_subscription_balance_deduction_after_tax,
-                            'title' => "Payment for trip",
-                            'narration' => "Part payment of " . Number::currency(centToDollar($outstanding_after_subscription_balance_deduction_after_tax))  . " for trip " . $trip->booking_id,
-                            'status' => TransactionStatusEnum::PENDING->value,
-                            'type' => TransactionTypeEnum::TRIP->value,
-                            'entry' => "debit",
-                            'channel' => PaymentTypeEnum::CARD->value,
-                            'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
-                            'tax_percentage' => $settings->tax_percentage
-                        ]
-                    );
-
-                    $payment->transactions()->saveMany([
-                        $transaction_one,
-                        $transaction_two
-                    ]);
-
-                    // charge card async
-                    $charge_card = $this->stripeService->chargeCard(
-                        $outstanding_after_subscription_balance_deduction_after_tax,
-                        $user->id,
-                        [
-                            'trip_id' => $trip->id,
-                            'trip_transaction_id' => $payment->id,
-                            'type' => ChargeTypeEnum::TRIP_FUND->value
-                        ]
-                    );
-
-                    if (!$charge_card['status']) {
-                        updateTripStatus($trip, $payment, TripStatusEnum::CANCELED, TransactionStatusEnum::FAILED);
-                        return [
-                            'status' => false,
-                            'message' => $charge_card['message'],
-                            'data' => $charge_card['data']
-                        ];
-                    }
-
-                    $transaction_two->update([
-                        'object' => $charge_card['data']
-                    ]);
-
-
-                    $notification = new NotificationService($user);
-
-                    $notification
-                        ->setBody("Transaction has been initiated, we will notify you soon")
-                        ->setTitle('Transaction initiated successfully')
-                        ->setUrl('http://google.com')
-                        ->setType(NotificationTypeEnum::TRIP_BOOKED)
-                        ->sendPushNotification()
-                        ->sendInAppNotification();
-
-                    return [
-                        'status' => true,
-                        'message' => 'Transaction has been initiated, we will notify when your trip is booked',
-                        'data' => $trip
-                    ];
-                }
-            } else {
-
-                $removed_charge =  $user->update([
-                    'subscription_balance' => $user->subscription_balance - $total_amount_before_tax,
-                ]);
-
-                if ($removed_charge) {
-                    $trip = $this->tripRepository->update($trip_id, [
-                        'end_time' => $extra_time_end_time,
-                    ]);
-
-                    $payment = TripTransaction::create([
-                        'trip_id' => $trip->id,
-                        'building_id' => $trip->vehicle->building->id,
-                        'vehicle_id' => $trip->vehicle->id,
-                        'user_id' => $user->id,
-                        'reference' => generateReference(),
-                        'public_id' => uuid(),
-                        'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                        'amount' => $total_amount_before_tax,
-                        'amount' => $total_amount_before_tax,
-                        'tax_amount' => 0.00,
-                        'tax_percentage' => 0,
-                        'start_time' => $extra_time_start_time,
-                        'end_time' => $extra_time_end_time,
-                        'rate' => $settings->subscriber_price_per_hour
-                    ]);
-
-
-                    $transaction = $this->transactionRepository->create(
-                        [
-                            'user_id' => $user->id,
-                            'amount' => $total_amount_before_tax,
-                            'title' => "Payment for trip",
-                            'narration' => "Part payment of " . Number::currency(centToDollar($total_amount_before_tax))  . " for trip " . $trip->booking_id,
-                            'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                            'type' => TransactionTypeEnum::TRIP->value,
-                            'entry' => "debit",
-                            'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
-                            'tax_amount' => 0.00,
-                            'tax_percentage' => 0
-                        ]
-                    );
-
-                    $payment->transactions()->save($transaction);
-
-
-                    $notification = new NotificationService($user);
-
-                    $notification
-                        ->setBody("Your trip has been reserved successfully, your booking id is $trip->booking_id")
-                        ->setTitle('Trip booked successfully')
-                        ->setUrl('http://google.com')
-                        ->setType(NotificationTypeEnum::TRIP_BOOKED)
-                        ->sendPushNotification()
-                        ->sendInAppNotification();
-
-                    return [
-                        'status' => true,
-                        'message' => "Your trip has been reserved successfully, your booking id is $trip->booking_id",
-                        'data' => $trip
-                    ];
-                }
-            }
-        } else {
-
-
-            if (!isset($validated->charge_from)) {
-                return [
-                    'status' => false,
-                    'message' => 'Please select where to charge from',
-                    'data' => null
-                ];
-            } elseif ($validated->charge_from === PaymentTypeEnum::WALLET->value) {
-
-                if ($user->wallet < $total_amount) {
-                    return [
-                        'status' => false,
-                        'message' => 'The amount in wallet cannot cover outstanding, please select another payment method.',
-                        'data' => null
-                    ];
-                }
-
-                // remove from sub and wallet
-                $removed_charge =  $user->update([
-                    'subscription_balance' => 0,
-                    'wallet' => $user->wallet - $total_amount
-                ]);
-
-                if ($removed_charge) {
-                    $trip = $this->tripRepository->update($trip_id, [
-                        'end_time' => $extra_time_end_time,
-                    ]);
-
-                    $payment = TripTransaction::create([
-                        'trip_id' => $trip->id,
-                        'building_id' => $trip->vehicle->building->id,
-                        'vehicle_id' => $trip->vehicle->id,
-                        'user_id' => auth()->id(),
-                        'reference' => generateReference(),
-                        'public_id' => uuid(),
-                        'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                        'amount' => $total_amount_before_tax,
-                        'total_amount' => $total_amount,
-                        'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
-                        'tax_percentage' => $settings->tax_percentage,
-                        'start_time' => $extra_time_start_time,
-                        'end_time' => $extra_time_end_time,
-                        'rate' => $vehicle->price_per_hour
-                    ]);
-
-                    $transaction = $this->transactionRepository->create(
-                        [
-                            'user_id' => $user->id,
-                            'amount' => $total_amount_before_tax,
-                            'total_amount' => $total_amount,
-                            'title' => "Payment for trip",
-                            'narration' => "Payment of " . Number::currency(centToDollar($total_amount))  . " for trip " . $trip->booking_id,
-                            'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                            'type' => TransactionTypeEnum::TRIP->value,
-                            'entry' => "debit",
-                            'channel' => PaymentTypeEnum::WALLET->value,
-                            'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
-                            'tax_percentage' => $settings->tax_percentage
-                        ]
-                    );
-
-                    $payment->transactions()->save($transaction);
-
-
-                    $notification = new NotificationService($user);
-
-                    $notification
-                        ->setBody("Your trip has been reserved successfully, your booking id is $trip->booking_id")
-                        ->setTitle('Trip booked successfully')
-                        ->setUrl('http://google.com')
-                        ->setType(NotificationTypeEnum::TRIP_BOOKED)
-                        ->sendPushNotification()
-                        ->sendInAppNotification();
-
-                    return [
-                        'status' => true,
-                        'message' => "Your trip has been reserved successfully, your booking id is $trip->booking_id",
-                        'data' => $trip
-                    ];
-                }
-            } elseif ($validated->charge_from === PaymentTypeEnum::CARD->value) {
-
-                // get active card
-                $active_card = $user->activeCard;
-
-                if (!$active_card) {
-                    return [
-                        'status' => false,
-                        'message' => 'You need to have an active card for card transactions',
-                        'data' => null
-                    ];
-                }
-
-                $trip = $this->tripRepository->update($trip_id, [
-                    'end_time' => $extra_time_end_time,
-                ]);
-
-                $payment = TripTransaction::create([
-                    'trip_id' => $trip->id,
-                    'building_id' => $trip->vehicle->building->id,
-                    'vehicle_id' => $trip->vehicle->id,
-                    'user_id' => $user->id,
-                    'status' => TransactionStatusEnum::PENDING->value,
-                    'reference' => generateReference(),
-                    'public_id' => uuid(),
-                    'amount' => $total_amount_before_tax,
-                    'total_amount' => $total_amount,
-                    'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
-                    'tax_percentage' => $settings->tax_percentage,
-                    'start_time' => $extra_time_start_time,
-                    'end_time' => $extra_time_end_time,
-                    'rate' => $vehicle->price_per_hour
-                ]);
-
-                $transaction = $this->transactionRepository->create(
-                    [
-                        'user_id' => $user->id,
-                        'amount' => $total_amount_before_tax,
-                        'total_amount' => $total_amount,
-                        'title' => "Payment for trip",
-                        'narration' => "Part payment of " . Number::currency(centToDollar($total_amount))  . " for trip " . $trip->booking_id,
-                        'status' => TransactionStatusEnum::PENDING->value,
-                        'type' => TransactionTypeEnum::TRIP->value,
-                        'entry' => "debit",
-                        'channel' => PaymentTypeEnum::CARD->value,
-                        'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
-                        'tax_percentage' => $settings->tax_percentage
-                    ]
-                );
-
-                $payment->transactions()->save($transaction);
-
-
-                // charge card async
-                $charge_card = $this->stripeService->chargeCard(
-                    $total_amount,
-                    $user->id,
-                    [
-                        'trip_id' => $trip->id,
-                        'trip_transaction_id' => $payment->id,
-                        'type' => ChargeTypeEnum::TRIP_FUND->value
-                    ]
-                );
-
-                if (!$charge_card['status']) {
-
-                    updateTripStatus($trip, $payment, TripStatusEnum::CANCELED, TransactionStatusEnum::FAILED);
-
-                    return [
-                        'status' => false,
-                        'message' => $charge_card['message'],
-                        'data' => $charge_card['data']
-                    ];
-                }
-
-                $transaction->update([
-                    'object' => $charge_card['data']
-                ]);
-
-
-                $notification = new NotificationService($user);
-
-                $notification
-                    ->setBody("Transaction has been initiated, we will notify you soon")
-                    ->setTitle('Transaction initiated successfully')
-                    ->setUrl('http://google.com')
-                    ->setType(NotificationTypeEnum::TRIP_BOOKED)
-                    ->sendPushNotification()
-                    ->sendInAppNotification();
-
-                return [
-                    'status' => true,
-                    'message' => 'Transaction has been initiated, we will notify when your trip is booked',
-                    'data' => $trip
-                ];
-            }
-        }
-
-
-        return [
-            'status' => false,
-            'message' => 'Extra time could not be added',
-            'data' => null
-        ];
-    }
-
     public function addExtraTime($validated, $trip_id)
     {
         $trip = $this->tripRepository->findById($trip_id);
@@ -1288,21 +748,30 @@ class TripService
             ->orderBy('start_time', 'asc')
             ->first();
 
-        $time_between_current_and_next_reservation =  calculateMinutesDifference($trip_start_time_plus_buffer, $next_reservation->start_time);
-
-        $time_between_current_and_next_reservation_hour = $time_between_current_and_next_reservation / 60;
+        if ($next_reservation) {
+            $time_between_current_and_next_reservation = calculateMinutesDifference($trip_start_time_plus_buffer, $next_reservation->start_time);
+            $time_between_current_and_next_reservation_hour = $time_between_current_and_next_reservation / 60;
+        } else {
+            $time_between_current_and_next_reservation = PHP_INT_MAX; // No limit if there's no next reservation
+            $time_between_current_and_next_reservation_hour = $time_between_current_and_next_reservation / 60;
+        }
 
         $max_reservation_time = 4;
-
         $max_reservation_time_in_minutes = $max_reservation_time * 60;
-
-        $minutes_to_be_added = $validated->minutes;
-
+        $minutes_to_be_added = (int) $validated->minutes;
 
         if ($minutes_to_be_added > $max_reservation_time_in_minutes - 1) {
             return [
                 'status' => false,
-                'message' => "Sorry the maximum extra time you can add is $max_reservation_time",
+                'message' => "Sorry the maximum extra time you can add is $max_reservation_time hour(s)",
+                'data' => null
+            ];
+        }
+
+        if ($time_between_current_and_next_reservation_hour == 0) {
+            return [
+                'status' => false,
+                'message' => "You cannot extend or add extra time at this time",
                 'data' => null
             ];
         }
@@ -1316,41 +785,26 @@ class TripService
         }
 
         $user = $this->userRepository->findById(auth()->id());
-
         $product = Product::all()->first();
-
         $subscribed = $user->subscribed($product->stripe_id);
-
         $settings = TripSetting::first();
 
         $extra_time_start_time = $trip->end_time;
-        $extra_time_end_time =  Carbon::parse($trip->end_time)->addMinutes($minutes_to_be_added);
+        $extra_time_end_time = Carbon::parse($trip->end_time)->addMinutes($minutes_to_be_added)->toDateTimeString();
 
         $vehicle = $this->vehicleRepository->findById($trip->vehicle_id);
-
-
         $mins_difference = calculateMinutesDifference($extra_time_start_time, $extra_time_end_time);
-
-        $price_per_minute = roundToWholeNumber(dollarToCent($vehicle->price_per_hour)  / 60);
-
-
+        $price_per_minute = roundToWholeNumber(dollarToCent($vehicle->price_per_hour) / 60);
         $total_amount_before_tax = $mins_difference * $price_per_minute;
-
         $total_amount = $total_amount_before_tax + calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax);
 
-
         if ($subscribed) {
-
             $total_amount_before_tax = $minutes_to_be_added * roundToWholeNumber(dollarToCent(pricePerHourToPricePerMinute($settings->subscriber_price_per_hour)));
-
             $total_amount = $total_amount_before_tax + calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax);
 
-
             if ($user->subscription_balance < $total_amount) {
-
                 $outstanding_after_subscription_balance_deduction_before_tax = $total_amount_before_tax - $user->subscription_balance;
-                $outstanding_after_subscription_balance_deduction_after_tax =  $outstanding_after_subscription_balance_deduction_before_tax + calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax);
-
+                $outstanding_after_subscription_balance_deduction_after_tax = $outstanding_after_subscription_balance_deduction_before_tax + calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax);
 
                 $trip = $this->tripRepository->update($trip_id, [
                     'end_time' => $extra_time_end_time,
@@ -1365,7 +819,7 @@ class TripService
                     'reference' => generateReference(),
                     'public_id' => uuid(),
                     'amount' => $total_amount_before_tax,
-                    'total_amount' => $total_amount,
+                    'total_amount' => $total_amount_before_tax,
                     'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
                     'tax_percentage' => $settings->tax_percentage,
                     'start_time' => $extra_time_start_time,
@@ -1374,49 +828,39 @@ class TripService
                     'type' => TripTransactionTypeEnum::EXTRA_TIME->value
                 ]);
 
-
-                $transaction_one = $this->transactionRepository->create(
-                    [
-                        'user_id' => $user->id,
-                        'amount' => $user->subscription_balance,
-                        'total_amount' => $user->subscription_balance,
-                        'title' => "Payment for trip",
-                        'narration' => "Part payment of " . Number::currency(centToDollar($user->subscription_balance))  . " for trip " . $trip->booking_id,
-                        'status' => TransactionStatusEnum::PENDING->value,
-                        'type' => TransactionTypeEnum::TRIP->value,
-                        'entry' => "debit",
-                        'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
-                        'tax_amount' => 0.00,
-                        'tax_percentage' => 0
-                    ]
-                );
-
-                $transaction_two = $this->transactionRepository->create(
-                    [
-                        'user_id' => $user->id,
-                        'amount' => $outstanding_after_subscription_balance_deduction_before_tax,
-                        'total_amount' => $outstanding_after_subscription_balance_deduction_after_tax,
-                        'title' => "Payment for trip",
-                        'narration' => "Part payment of " . Number::currency(centToDollar($outstanding_after_subscription_balance_deduction_after_tax))  . " for trip " . $trip->booking_id,
-                        'status' => TransactionStatusEnum::PENDING->value,
-                        'type' => TransactionTypeEnum::TRIP->value,
-                        'entry' => "debit",
-                        'channel' => PaymentTypeEnum::CARD->value,
-                        'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
-                        'tax_percentage' => $settings->tax_percentage
-                    ]
-                );
-
-                $payment->transactions()->saveMany([
-                    $transaction_one,
-                    $transaction_two
+                $transaction_one = $this->transactionRepository->create([
+                    'user_id' => $user->id,
+                    'amount' => $user->subscription_balance,
+                    'total_amount' => $user->subscription_balance,
+                    'title' => "Payment for trip",
+                    'narration' => "Part payment of " . Number::currency(centToDollar($user->subscription_balance)) . " for trip " . $trip->booking_id,
+                    'status' => TransactionStatusEnum::PENDING->value,
+                    'type' => TransactionTypeEnum::TRIP->value,
+                    'entry' => "debit",
+                    'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
+                    'tax_amount' => 0.00,
+                    'tax_percentage' => 0
                 ]);
 
-                $notification = new NotificationService($user);
+                $transaction_two = $this->transactionRepository->create([
+                    'user_id' => $user->id,
+                    'amount' => $outstanding_after_subscription_balance_deduction_before_tax,
+                    'total_amount' => $outstanding_after_subscription_balance_deduction_after_tax,
+                    'title' => "Payment for trip",
+                    'narration' => "Part payment of " . Number::currency(centToDollar($outstanding_after_subscription_balance_deduction_after_tax)) . " for trip " . $trip->booking_id,
+                    'status' => TransactionStatusEnum::PENDING->value,
+                    'type' => TransactionTypeEnum::TRIP->value,
+                    'entry' => "debit",
+                    'channel' => PaymentTypeEnum::CARD->value,
+                    'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $outstanding_after_subscription_balance_deduction_before_tax),
+                    'tax_percentage' => $settings->tax_percentage
+                ]);
 
-                $notification
-                    ->setBody("Extra time has been added")
-                    ->setTitle('Extra time has been added to you trip and will be charged when the trip is over')
+                $payment->transactions()->saveMany([$transaction_one, $transaction_two]);
+
+                $notification = new NotificationService($user);
+                $notification->setBody("Extra time has been added")
+                    ->setTitle('Extra time has been added to your trip and will be charged when the trip is over')
                     ->setUrl('http://google.com')
                     ->setType(NotificationTypeEnum::TRIP_BOOKED)
                     ->sendPushNotification()
@@ -1428,8 +872,7 @@ class TripService
                     'data' => $trip
                 ];
             } else {
-
-                $removed_charge =  $user->update([
+                $removed_charge = $user->update([
                     'subscription_balance' => $user->subscription_balance - $total_amount_before_tax,
                 ]);
 
@@ -1447,7 +890,7 @@ class TripService
                         'public_id' => uuid(),
                         'status' => TransactionStatusEnum::SUCCESSFUL->value,
                         'amount' => $total_amount_before_tax,
-                        'amount' => $total_amount_before_tax,
+                        'total_amount' => $total_amount_before_tax,
                         'tax_amount' => 0.00,
                         'tax_percentage' => 0,
                         'start_time' => $extra_time_start_time,
@@ -1456,29 +899,24 @@ class TripService
                         'type' => TripTransactionTypeEnum::EXTRA_TIME->value
                     ]);
 
-
-                    $transaction = $this->transactionRepository->create(
-                        [
-                            'user_id' => $user->id,
-                            'amount' => $total_amount_before_tax,
-                            'title' => "Payment for trip",
-                            'narration' => "Part payment of " . Number::currency(centToDollar($total_amount_before_tax))  . " for trip " . $trip->booking_id,
-                            'status' => TransactionStatusEnum::SUCCESSFUL->value,
-                            'type' => TransactionTypeEnum::TRIP->value,
-                            'entry' => "debit",
-                            'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
-                            'tax_amount' => 0.00,
-                            'tax_percentage' => 0
-                        ]
-                    );
+                    $transaction = $this->transactionRepository->create([
+                        'user_id' => $user->id,
+                        'amount' => $total_amount_before_tax,
+                        'total_amount' => $total_amount_before_tax,
+                        'title' => "Payment for trip",
+                        'narration' => "Part payment of " . Number::currency(centToDollar($total_amount_before_tax)) . " for trip " . $trip->booking_id,
+                        'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                        'type' => TransactionTypeEnum::TRIP->value,
+                        'entry' => "debit",
+                        'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
+                        'tax_amount' => 0.00,
+                        'tax_percentage' => 0
+                    ]);
 
                     $payment->transactions()->save($transaction);
 
-
                     $notification = new NotificationService($user);
-
-                    $notification
-                        ->setBody("Your time has been extended")
+                    $notification->setBody("Your time has been extended")
                         ->setTitle('Your Trip time has been extended successfully')
                         ->setUrl('http://google.com')
                         ->setType(NotificationTypeEnum::TRIP_BOOKED)
@@ -1493,8 +931,6 @@ class TripService
                 }
             }
         } else {
-
-
             $trip = $this->tripRepository->update($trip_id, [
                 'end_time' => $extra_time_end_time,
             ]);
@@ -1517,30 +953,25 @@ class TripService
                 'type' => TripTransactionTypeEnum::EXTRA_TIME->value
             ]);
 
-            $transaction = $this->transactionRepository->create(
-                [
-                    'user_id' => $user->id,
-                    'amount' => $total_amount_before_tax,
-                    'total_amount' => $total_amount,
-                    'title' => "Payment for trip",
-                    'narration' => "Part payment of " . Number::currency(centToDollar($total_amount))  . " for trip " . $trip->booking_id,
-                    'status' => TransactionStatusEnum::PENDING->value,
-                    'type' => TransactionTypeEnum::TRIP->value,
-                    'entry' => "debit",
-                    'channel' => PaymentTypeEnum::CARD->value,
-                    'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
-                    'tax_percentage' => $settings->tax_percentage
-                ]
-            );
+            $transaction = $this->transactionRepository->create([
+                'user_id' => $user->id,
+                'amount' => $total_amount_before_tax,
+                'total_amount' => $total_amount,
+                'title' => "Payment for trip",
+                'narration' => "Part payment of " . Number::currency(centToDollar($total_amount)) . " for trip " . $trip->booking_id,
+                'status' => TransactionStatusEnum::PENDING->value,
+                'type' => TransactionTypeEnum::TRIP->value,
+                'entry' => "debit",
+                'channel' => PaymentTypeEnum::CARD->value,
+                'tax_amount' => calculatePercentageOfValue($settings->tax_percentage, $total_amount_before_tax),
+                'tax_percentage' => $settings->tax_percentage
+            ]);
 
             $payment->transactions()->save($transaction);
 
-
             $notification = new NotificationService($user);
-
-            $notification
-                ->setBody("Extra time has been added")
-                ->setTitle('Extra time has been added to you trip and will be charged when the trip is over')
+            $notification->setBody("Extra time has been added")
+                ->setTitle('Extra time has been added to your trip and will be charged when the trip is over')
                 ->setUrl('http://google.com')
                 ->setType(NotificationTypeEnum::TRIP_BOOKED)
                 ->sendPushNotification()
@@ -1548,48 +979,16 @@ class TripService
 
             return [
                 'status' => true,
-                'message' => 'Extra time has been added to you trip and will be charged when the trip is over',
+                'message' => 'Extra time has been added to your trip and will be charged when the trip is over',
                 'data' => $trip
             ];
         }
-
 
         return [
             'status' => false,
             'message' => 'Extra time could not be added',
             'data' => null
         ];
-    }
-
-
-
-    private function checkVehicleAvailability2($data)
-    {
-        $start_time = $data->start_time;
-        $end_time = $data->end_time;
-
-        $check = $this->tripRepository->query()
-            ->where('vehicle_id', $data->vehicle_id)
-            ->where(function ($query) use ($start_time, $end_time) {
-                $query->where(function ($query) use ($start_time) {
-                    $query->where('start_time', '<=', $start_time)
-                        ->where('end_time', '>=', $start_time)
-                        ->whereIn('status', ['started', 'reserved', 'pending']);
-                })->orWhere(function ($query) use ($end_time) {
-                    $query->where('start_time', '<=', $end_time)
-                        ->where('end_time', '>=', $end_time)
-                        ->whereIn('status', ['started', 'reserved', 'pending']);
-                });
-            })
-            ->orWhere(function ($query) use ($start_time, $end_time) {
-                $query->where('start_time', '>=', $start_time)
-                    ->where('end_time', '<=', $end_time)
-                    ->whereIn('status', ['started', 'reserved', 'pending']);
-            })
-
-            ->exists();
-
-        return !$check;
     }
 
     public function cancelTrip($trip_id)
@@ -1608,7 +1007,7 @@ class TripService
             }
 
             // check if trip has started
-            if (!$trip->status == TripStatusEnum::RESERVED) {
+            if ($trip->status !== TripStatusEnum::RESERVED->value) {
                 return [
                     'status' => false,
                     'message' => "Trip $trip->status, you cannot cancel trip",
@@ -1616,7 +1015,7 @@ class TripService
                 ];
             }
 
-            ProcessRefundJob::dispatch($trip_id);
+            ProcessRefundJob::dispatch($trip);
 
             return [
                 'status' => true,

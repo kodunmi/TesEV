@@ -4,6 +4,7 @@ namespace App\Jobs\Core;
 
 use App\Enum\PaymentTypeEnum;
 use App\Enum\TransactionTypeEnum;
+use App\Enum\TripStatusEnum;
 use App\Models\Transaction;
 use App\Models\Trip;
 use App\Models\TripSetting;
@@ -39,7 +40,7 @@ class ProcessRefundJob implements ShouldQueue
 
         $now_plus_grace_period = Carbon::now()->addHours($settings->cancellation_grace_hour);
 
-        $trip_transaction = TripTransaction::where('trip_id')->first();
+        $trip_transaction = TripTransaction::where('trip_id', $this->trip->id)->first();
 
         if ($now_plus_grace_period->gt($this->trip->start_time)) {
             // ride has exceeded grace period
@@ -80,6 +81,10 @@ class ProcessRefundJob implements ShouldQueue
         $user = User::find($transaction->user_id);
 
         $user->refund($payment_id);
+
+        $this->trip->update([
+            'status' => TripStatusEnum::CANCELED->value
+        ]);
     }
 
     private function processWalletRefund(int $percent, Transaction $transaction)
@@ -93,6 +98,10 @@ class ProcessRefundJob implements ShouldQueue
         $user->update([
             'wallet' => $user->wallet + $percentage_of_amount
         ]);
+
+        $this->trip->update([
+            'status' => TripStatusEnum::CANCELED->value
+        ]);
     }
     private function processSubscriptionRefund(int $percent, Transaction $transaction)
     {
@@ -102,10 +111,12 @@ class ProcessRefundJob implements ShouldQueue
 
         $percentage_of_amount = $percent * $amount / 100;
 
-
-
         $user->update([
-            'wallet' => $user->wallet + $percentage_of_amount
+            'subscription_balance' => $user->subscription_balance + $percentage_of_amount
+        ]);
+
+        $this->trip->update([
+            'status' => TripStatusEnum::CANCELED->value
         ]);
     }
 }

@@ -181,7 +181,7 @@ class TripController extends Controller
         $response = $this->tripService->cancelTrip($trip_id);
 
         if (!$response['status']) {
-            return respondError('Error costing trip');
+            return respondError($response['message']);
         }
 
         return respondSuccess($response['message'], $response['data']);
