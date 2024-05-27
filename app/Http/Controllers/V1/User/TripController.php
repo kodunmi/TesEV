@@ -44,7 +44,7 @@ class TripController extends Controller
 
     public function getTrips(Request $request)
     {
-        $status = $request->query('status', [TripStatusEnum::RESERVED->value, TripStatusEnum::STARTED->value]);
+        $status = $request->query('status', "[reserved, started]");
 
         $trips = $this->tripRepository->query()->where('user_id', auth()->id())->whereIn('status', transformStringToArray($status))->paginate(10);
 
