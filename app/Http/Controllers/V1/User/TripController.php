@@ -42,9 +42,11 @@ class TripController extends Controller
     ) {
     }
 
-    public function getTrips()
+    public function getTrips(Request $request)
     {
-        $trips = $this->tripRepository->query()->where('user_id', auth()->id())->where('status', TripStatusEnum::STARTED->value)->orWhere('status', TripStatusEnum::RESERVED->value)->paginate(10);
+        $status = $request->query('status', [TripStatusEnum::RESERVED->value, TripStatusEnum::STARTED->value]);
+
+        $trips = $this->tripRepository->query()->where('user_id', auth()->id())->whereIn('status', transformStringToArray($status))->paginate(10);
 
         return respondSuccess('Trips fetched successfully', MultiTripResource::collection($trips));
     }

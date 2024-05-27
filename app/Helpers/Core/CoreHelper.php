@@ -387,4 +387,19 @@ if (!function_exists('updateTripStatus')) {
             return $percentage_used;
         }
     }
+
+    if (!function_exists('transformStringToArray')) {
+
+        function transformStringToArray($inputString)
+        {
+            // Remove the opening and closing brackets
+            $trimmedString = trim($inputString, '[]');
+
+            // Split the string by commas and trim any whitespace from each value
+            $array = array_map('trim', explode(',', $trimmedString));
+
+            // Return the resulting array
+            return $array;
+        }
+    }
 }
