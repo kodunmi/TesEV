@@ -15,7 +15,7 @@ use App\Enum\TripPaymentTypeEnum;
 use App\Enum\TripStatusEnum;
 use App\Enum\TripTransactionTypeEnum;
 use App\Http\Resources\Core\VehicleResource;
-use App\Jobs\Core\ProcessRefundJob;
+use App\Jobs\Core\Trip\ProcessRefundJob;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\TripSetting;
@@ -933,6 +933,7 @@ class TripService
         } else {
             $trip = $this->tripRepository->update($trip_id, [
                 'end_time' => $extra_time_end_time,
+                'added_extra_time' => true
             ]);
 
             $payment = TripTransaction::create([
