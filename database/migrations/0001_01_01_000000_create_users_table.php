@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('phone_code')->nullable();
             $table->string('pin')->nullable();
             $table->string('gender')->nullable();
-            $table->enum('status', ['deactivated', 'pending', 'active'])->default('pending');
+            $table->enum('status', ['deactivated', 'pending', 'active', 'suspended'])->default('pending');
             $table->date('date_of_birth')->nullable();
             $table->double('wallet')->default(0.00);
             $table->double('subscription_balance')->default(0.00);
