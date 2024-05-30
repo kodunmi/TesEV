@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Jobs\Core;
+namespace App\Jobs\Core\Trip;
+
 
 use App\Enum\PaymentTypeEnum;
 use App\Enum\TransactionTypeEnum;

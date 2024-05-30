@@ -21,6 +21,7 @@ class Trip extends Model
         'vehicle_id',
         'start_time',
         'end_time',
+        'added_extra_time',
         'started_at',
         'ended_at',
         'public_id',

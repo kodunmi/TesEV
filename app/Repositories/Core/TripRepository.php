@@ -29,6 +29,7 @@ class TripRepository implements TripRepositoryInterface
         $trip->tax_amount = $data['tax_amount'] ?? 0;
         $trip->tax_percentage = $data['tax_percentage'] ?? 0;
         $trip->tax_percentage = $data['tax_percentage'] ?? 0;
+        $trip->added_extra_time = $data['added_extra_time'] ??  false;
 
 
 
@@ -51,6 +52,7 @@ class TripRepository implements TripRepositoryInterface
         $trip->vehicle_id = $data['vehicle_id'] ?? $trip->vehicle_id;
         $trip->start_time = $data['start_time'] ??  $trip->start_time;
         $trip->end_time = $data['end_time'] ??  $trip->end_time;
+        $trip->added_extra_time = $data['added_extra_time'] ??  $trip->added_extra_time;
         $trip->parent_trip_id = $data['parent_trip_id'] ?? $trip->parent_trip_id;
         $trip->status = $data['status'] ??  $trip->status;
 

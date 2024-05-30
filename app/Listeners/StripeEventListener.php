@@ -243,11 +243,14 @@ class StripeEventListener
 
                         $user = $this->userRepository->findById($trip->user_id);
 
-                        $user->update([
-                            'subscription_balance' => 0
-                        ]);
+                        // subscription_balance
+                        if (isset($event->payload['data']['object']['metadata']['subscription_balance'])) {
+                            $user->update([
+                                'subscription_balance' => $event->payload['data']['object']['metadata']['subscription_balance']
+                            ]);
+                        }
 
-                        if ($trip->status !== TripStatusEnum::STARTED->value) {
+                        if ($trip->status == TripStatusEnum::PENDING->value) {
                             $trip->update([
                                 'status' => TripStatusEnum::RESERVED->value
                             ]);
@@ -272,8 +275,8 @@ class StripeEventListener
                         $notification = new NotificationService($user);
 
                         $notification
-                            ->setBody("Transaction successful, your trip has reserved")
-                            ->setTitle('Trip reserved')
+                            ->setBody("Transaction successful")
+                            ->setTitle('Transaction successful')
                             ->setUrl('http://google.com')
                             ->setType(NotificationTypeEnum::WALLET_FUND)
                             ->sendPushNotification()

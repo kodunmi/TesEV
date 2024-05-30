@@ -432,7 +432,8 @@ class TripService
                         [
                             'trip_id' => $trip->id,
                             'trip_transaction_id' => $payment->id,
-                            'type' => ChargeTypeEnum::TRIP_FUND->value
+                            'type' => ChargeTypeEnum::TRIP_FUND->value,
+                            'subscription_balance' => 0
                         ]
                     );
 
