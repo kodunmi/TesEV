@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\V1\User;
+
 
 use App\Actions\Payment\StripeService;
 use App\Enum\ChargeTypeEnum;
