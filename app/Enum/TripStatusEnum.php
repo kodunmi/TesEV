@@ -13,4 +13,5 @@ enum TripStatusEnum: string
     case PENDING = 'pending';
     case CANCELED = 'canceled';
     case RESERVED = 'reserved';
+    case PENALTY = 'penalty';
 }

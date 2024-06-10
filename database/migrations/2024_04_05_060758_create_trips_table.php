@@ -23,6 +23,9 @@ return new class extends Migration
             $table->dateTime('started_at')->nullable();
             $table->dateTime('ended_at')->nullable();
 
+            $table->dateTime('penalty_started_at')->nullable();
+            $table->dateTime('penalty_ended_at')->nullable();
+
             $table->boolean('started_trip')->default(false);
             $table->boolean('ended_trip')->default(false);
 
