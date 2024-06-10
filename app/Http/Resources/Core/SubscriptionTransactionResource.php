@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Resources\User;
+namespace App\Http\Resources\Core;
 
-use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserSubscriptionResource extends JsonResource
+class SubscriptionTransactionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,10 +14,6 @@ class UserSubscriptionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // $package = Package::where('stripe_id', $this->stripe_price)->first();
-
-        // return $package->toArray();
-
         return parent::toArray($request);
     }
 }
