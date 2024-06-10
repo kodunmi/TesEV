@@ -14,10 +14,13 @@ use App\Enum\TransactionTypeEnum;
 use App\Enum\TripPaymentTypeEnum;
 use App\Enum\TripStatusEnum;
 use App\Enum\TripTransactionTypeEnum;
+use App\Http\Resources\Core\TripResource;
 use App\Http\Resources\Core\VehicleResource;
+use App\Jobs\Core\Trip\ProcessExtraTimePaymentJob;
 use App\Jobs\Core\Trip\ProcessRefundJob;
 use App\Models\Package;
 use App\Models\Product;
+use App\Models\TripMetaData;
 use App\Models\TripSetting;
 use App\Models\TripTransaction;
 use App\Models\Vehicle;
@@ -809,6 +812,7 @@ class TripService
 
                 $trip = $this->tripRepository->update($trip_id, [
                     'end_time' => $extra_time_end_time,
+                    'added_extra_time' => true
                 ]);
 
                 $payment = TripTransaction::create([
@@ -1032,6 +1036,85 @@ class TripService
                 'message' => 'Error cancelling trip',
                 'data' => null
             ];
+        }
+    }
+
+    public function userEndTrip($validated, $trip_id)
+    {
+        try {
+
+            $trip = $this->tripRepository->findById($trip_id);
+
+            if (!$trip) {
+                return [
+                    'status' => false,
+                    'message' => 'Trip not found',
+                    'data' => null
+                ];
+            }
+
+            if (!$trip->started_at) {
+
+                return [
+                    'status' => false,
+                    'message' => 'You have not started the trip',
+                    'data' => null
+                ];
+            }
+
+            if ($trip->ended_at) {
+                return [
+                    'status' => false,
+                    'message' => 'Trip already ended',
+                    'data' => null
+                ];
+            }
+
+
+            if (!$trip->ended_at == TripStatusEnum::STARTED->value) {
+                return [
+                    'status' => false,
+                    'message' => 'You cannot end this trip',
+                    'data' => null
+                ];
+            }
+
+            if (!isParkedAndCharging($trip->vehicle_id)) {
+                return [
+                    'status' => false,
+                    'message' => 'Vehicle is not parked or not charging, please make sure EV is parked in the right place and charging before you can end trip',
+                    'data' => null
+                ];
+            }
+
+            if ($trip->added_extra_time) {
+                ProcessExtraTimePaymentJob::dispatch($trip);
+            }
+
+            $trip->update([
+                'ended_at' => now(),
+                'status' => TripStatusEnum::ENDED->value
+            ]);
+
+            $trip_meta =  TripMetaData::make([
+                'remove_belongings' => $validated->remove_belongings,
+                'remove_trash' => $validated->remove_trash,
+                'plug_vehicle' => $validated->plug_vehicle,
+                'public_id' => uuid()
+            ]);
+
+            $trip->tripMetaData()->save($trip_meta);
+
+            $trip->refresh();
+
+            return [
+                'status' => true,
+                'message' => 'Trip ended successfully',
+                'data' => $trip
+            ];
+        } catch (\Throwable $th) {
+            logError($th->getMessage(), ['error' => $th]);
+            return respondError('Error starting trip, try again', null, 400);
         }
     }
 
