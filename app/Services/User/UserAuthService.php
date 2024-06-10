@@ -4,10 +4,13 @@ namespace App\Services\User;
 
 use App\Actions\Notifications\NotificationService;
 use App\Actions\Payment\StripeService;
+use App\Models\User;
 use App\Repositories\Core\TokenRepository;
 use App\Repositories\User\UserRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class UserAuthService
 {
@@ -239,6 +242,86 @@ class UserAuthService
             "status" => true,
             "message" => "Password updated successfully, please login",
             "data" => null
+        ];
+    }
+
+    public function refreshToken(Request $request)
+    {
+        if (empty($token = $request->header('Authorization'))) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        $tokenParts = explode('Bearer ', $token);
+        if (count($tokenParts) !== 2 || empty($tokenParts[1]) || empty($token = PersonalAccessToken::findToken($tokenParts[1]))) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        if (!$token->tokenable instanceof User) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        return [
+            'message' => '',
+            'data' => ['access_token' => $token->tokenable->createToken('access-token')->plainTextToken],
+            'status' => true,
+            'code' => 200
+        ];
+    }
+
+
+    public function deleteToken(Request $request)
+    {
+        if (empty($token = $request->header('Authorization'))) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        $tokenParts = explode('Bearer ', $token);
+        if (count($tokenParts) !== 2 || empty($tokenParts[1]) || empty($token = PersonalAccessToken::findToken($tokenParts[1]))) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        if (!$token->tokenable instanceof User) {
+            return [
+                'message' => 'Token is invalid',
+                'data' => null,
+                'status' => false,
+                'code' => 422
+            ];
+        }
+
+        // Revoke (delete) the token
+        $token->delete();
+
+        return [
+            'message' => 'Token deleted successfully',
+            'data' => null,
+            'status' => true,
+            'code' => 200
         ];
     }
 }

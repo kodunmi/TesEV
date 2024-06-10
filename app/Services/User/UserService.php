@@ -5,13 +5,15 @@ namespace App\Services\User;
 use App\Actions\Cloud\CloudService;
 use App\Enum\CloudTypeEnum;
 use App\Repositories\User\ComplianceRepository;
+use App\Repositories\User\UserRepository;
 use Illuminate\Support\Facades\DB;
 
 class UserService
 {
     public function __construct(
         protected CloudService $cloudService,
-        protected ComplianceRepository $complianceRepository
+        protected ComplianceRepository $complianceRepository,
+        protected UserRepository $userRepository,
     ) {
     }
 
@@ -76,5 +78,52 @@ class UserService
                 'data' => null
             ];
         }
+    }
+
+    public function updateProfile($id, $data)
+    {
+
+        $updated = $this->userRepository->updateUser($id, $data);
+
+        if (!$updated) {
+            return [
+                'status' => false,
+                'message' => 'Error updating profile',
+                'data' => null
+            ];
+        }
+
+        return [
+            'status' => true,
+            'message' => 'Profile updated successfully',
+            'data' => null
+        ];
+    }
+
+    public function updateProfileImage($user_id, $image)
+    {
+
+        $file_upload = $this->cloudService->upload(
+            file: $image,
+            provider: CloudTypeEnum::CLOUDINARY,
+            folder: 'profile',
+            owner_id: $user_id,
+            name: $user_id . 'profile_image',
+            type: 'profile_image',
+            extension: $image->getClientOriginalExtension()
+        );
+
+        if (!$file_upload['status']) {
+            return [
+                'status' => false,
+                'message' =>  "Error uploading image",
+                'data' => null
+            ];
+        }
+        return [
+            'status' => true,
+            'message' =>  "Profile image uploaded successfully",
+            'data' => null
+        ];
     }
 }

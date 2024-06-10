@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -91,6 +92,10 @@ class User extends Authenticatable
         return $this->hasMany(Trip::class);
     }
 
+    public function photo(): BelongsTo
+    {
+        return $this->belongsTo(File::class, 'owner_id');
+    }
 
     public function reports()
     {
