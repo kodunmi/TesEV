@@ -17,6 +17,7 @@ use App\Http\Requests\User\EndTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
 use App\Http\Resources\Core\MultiTripResource;
 use App\Http\Resources\Core\TripResource;
+use App\Jobs\Core\Trip\ProcessExtraTimePaymentJob;
 use App\Models\TripMetaData;
 use App\Models\TripSetting;
 use App\Models\TripTransaction;
@@ -134,47 +135,14 @@ class TripController extends Controller
 
     public function endTrip(EndTripRequest $request, $trip_id)
     {
-        try {
+        $validated = (object) $request->validated();
 
-            $validated = (object) $request->validated();
+        $response = $this->tripService->userEndTrip($validated, $trip_id);
 
-
-
-            $trip = $this->tripRepository->findById($trip_id);
-
-            if (!$trip) {
-                return respondError('Trip not found', null, 404);
-            }
-
-            if (!$trip->started_at) {
-                return respondError('You have not started the trip', null, 400);
-            }
-
-            if ($trip->ended_at) {
-                return respondError('Trip already ended', null, 400);
-            }
-
-            $trip->update([
-                'ended_at' => now(),
-                'status' => TripStatusEnum::ENDED->value
-            ]);
-
-            $trip_meta =  TripMetaData::make([
-                'remove_belongings' => $validated->remove_belongings,
-                'remove_trash' => $validated->remove_trash,
-                'plug_vehicle' => $validated->plug_vehicle,
-                'public_id' => uuid()
-            ]);
-
-            $trip->tripMetaData()->save($trip_meta);
-
-            $trip->refresh();
-
-            return respondSuccess('Trip ended successfully', new TripResource($trip));
-        } catch (\Throwable $th) {
-            logError($th->getMessage(), ['error' => $th]);
-            return respondError('Error starting trip, try again', null, 400);
+        if (!$response['status']) {
+            return respondError($response['message']);
         }
+        return respondSuccess($response['message'], new TripResource($response['data']));
     }
 
     public function cancelTrip($trip_id)
