@@ -1,12 +1,15 @@
 <?php
 
-use App\Http\Controllers\User\WalletController;
+use App\Http\Controllers\V1\User\AccountController;
 use App\Http\Controllers\V1\User\AuthController;
 use App\Http\Controllers\V1\User\BuildingController;
 use App\Http\Controllers\V1\User\CardController;
 use App\Http\Controllers\V1\User\ComplianceController;
+use App\Http\Controllers\V1\User\NotificationController;
 use App\Http\Controllers\V1\User\SubscriptionController;
+use App\Http\Controllers\V1\User\TransactionController;
 use App\Http\Controllers\V1\User\TripController;
+use App\Http\Controllers\V1\User\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('compliance')->controller(ComplianceController::class)->group(function () {
@@ -73,9 +76,44 @@ Route::prefix('wallet')->controller(WalletController::class)->group(function () 
     Route::get('/transactions', 'getTransactions');
 });
 
-
 Route::prefix('settings')->group(function () {
     Route::prefix('password')->group(function () {
         Route::post('/reset', [AuthController::class, 'resetPassword']);
+    });
+});
+
+
+Route::prefix('transactions')->group(function () {
+    Route::get('/', [TransactionController::class, 'getAllTransactions']);
+    Route::get('/{transaction_id}', [TransactionController::class, 'getTransaction']);
+});
+
+Route::prefix('/notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'getAllNotifications']);
+    Route::get('/counts', [NotificationController::class, 'getNotificationCounts']);
+    Route::post('/', [NotificationController::class, 'getAllNotifications']);
+    Route::put('/read', [NotificationController::class, 'markAllNotificationsAsRead']);
+    Route::delete('/', [NotificationController::class, 'deleteAllNotifications']);
+
+    Route::prefix('/{id}')->group(function () {
+        Route::get('/', [NotificationController::class, 'getNotification']);
+        Route::put('/read', [NotificationController::class, 'markNotificationAsRead']);
+        Route::delete('/delete', [NotificationController::class, 'deleteNotification']);
+    });
+});
+
+Route::prefix('account')->group(function () {
+    Route::prefix('profile')->group(function () {
+        Route::get('/', [AccountController::class, 'getProfile']);
+        Route::put('/update', [AccountController::class, 'updateProfile']);
+
+        Route::prefix('image')->group(function () {
+            Route::put('/update', [AccountController::class, 'updateProfileImage']);
+        });
+    });
+
+    Route::prefix('tokens')->group(function () {
+        Route::post('/refresh', [AccountController::class, 'refreshToken']);
+        Route::post('/delete', [AccountController::class, 'deleteToken']);
     });
 });
