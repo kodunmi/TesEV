@@ -1,5 +1,6 @@
 <?php
 
+use App\Enum\UserStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,7 +21,7 @@ return new class extends Migration
             $table->string('phone_code')->nullable();
             $table->string('pin')->nullable();
             $table->string('gender')->nullable();
-            $table->enum('status', ['deactivated', 'pending', 'active', 'suspended'])->default('pending');
+            $table->enum('status', UserStatusEnum::values())->default(UserStatusEnum::PENDING->value);
             $table->date('date_of_birth')->nullable();
             $table->double('wallet')->default(0.00);
             $table->double('subscription_balance')->default(0.00);
