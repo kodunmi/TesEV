@@ -4,13 +4,16 @@ namespace App\Jobs\Core\Trip;
 
 
 use App\Enum\PaymentTypeEnum;
+use App\Enum\TransactionStatusEnum;
 use App\Enum\TransactionTypeEnum;
 use App\Enum\TripStatusEnum;
+use App\Models\Package;
 use App\Models\Transaction;
 use App\Models\Trip;
 use App\Models\TripSetting;
 use App\Models\TripTransaction;
 use App\Models\User;
+use App\Repositories\Core\TransactionRepository;
 use App\Repositories\User\UserRepository;
 use Aws\S3\Transfer;
 use Illuminate\Bus\Queueable;
@@ -19,6 +22,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Number;
 
 class ProcessRefundJob implements ShouldQueue
 {
@@ -81,11 +85,21 @@ class ProcessRefundJob implements ShouldQueue
 
         $user = User::find($transaction->user_id);
 
-        $user->refund($payment_id);
+        $user->refund($payment_id, $percent);
 
         $this->trip->update([
             'status' => TripStatusEnum::CANCELED->value
         ]);
+
+        $data = [
+            'user_id' => $user->id,
+            'amount' => $transaction->amount,
+            'total_amount' => $transaction->amount,
+            'title' => "Trip refund",
+            'narration' => "Refund of " . Number::currency(centToDollar($transaction->amount))  . " for trip " . $this->trip->booking_id,
+        ];
+
+        $this->createTransactionRecord($data, TransactionTypeEnum::TRIP, PaymentTypeEnum::CARD, $transaction);
     }
 
     private function processWalletRefund(int $percent, Transaction $transaction)
@@ -103,7 +117,18 @@ class ProcessRefundJob implements ShouldQueue
         $this->trip->update([
             'status' => TripStatusEnum::CANCELED->value
         ]);
+
+        $data = [
+            'user_id' => $user->id,
+            'amount' => $transaction->amount,
+            'total_amount' => $transaction->amount,
+            'title' => "Trip refund",
+            'narration' => "Refund of " . Number::currency(centToDollar($transaction->amount))  . " for trip " . $this->trip->booking_id,
+        ];
+
+        $this->createTransactionRecord($data, TransactionTypeEnum::TRIP, PaymentTypeEnum::WALLET, $transaction);
     }
+
     private function processSubscriptionRefund(int $percent, Transaction $transaction)
     {
         $user = User::find($transaction->user_id);
@@ -119,5 +144,39 @@ class ProcessRefundJob implements ShouldQueue
         $this->trip->update([
             'status' => TripStatusEnum::CANCELED->value
         ]);
+
+        $data = [
+            'user_id' => $user->id,
+            'amount' => $transaction->amount,
+            'total_amount' => $transaction->amount,
+            'title' => "Trip refund",
+            'narration' => "Refund of " . Number::currency(centToDollar($transaction->amount))  . " for trip " . $this->trip->booking_id,
+        ];
+
+        $this->createTransactionRecord($data, TransactionTypeEnum::TRIP, PaymentTypeEnum::SUBSCRIPTION, $transaction);
+    }
+
+    private function createTransactionRecord(array $data, TransactionTypeEnum $transactionTypeEnum, PaymentTypeEnum $paymentTypeEnum, $payment)
+    {
+
+        $transactionRepository = new TransactionRepository;
+
+        $transaction = $transactionRepository->create(
+            [
+                'user_id' => $data['user_id'],
+                'amount' => $data['amount'],
+                'total_amount' => $data['total_amount'],
+                'title' => $data['title'],
+                'narration' => $data['narration'],
+                'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                'type' => $transactionTypeEnum->value,
+                'entry' => "credit",
+                'channel' => $paymentTypeEnum->value,
+                'tax_amount' => 0.0,
+                'tax_percentage' => 0
+            ]
+        );
+
+        $payment->transactions()->save($transaction);
     }
 }
