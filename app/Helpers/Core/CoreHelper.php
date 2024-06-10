@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\Notifications\NotificationService;
+use App\Enum\NotificationTypeEnum;
 use App\Enum\TransactionStatusEnum;
 use App\Enum\TripStatusEnum;
 use App\Http\Resources\Core\PaginateResource;
@@ -400,6 +402,33 @@ if (!function_exists('updateTripStatus')) {
 
             // Return the resulting array
             return $array;
+        }
+    }
+
+
+    if (!function_exists('isParkedAndCharging')) {
+
+        function isParkedAndCharging($vehicle_id)
+        {
+            return true;
+        }
+    }
+
+    if (!function_exists('notifyUser')) {
+
+        function notifyUser(Trip $trip, string $message, string $title, NotificationTypeEnum $type)
+        {
+            $user = User::find($trip->user_id);
+
+            $notification = new NotificationService($user);
+
+            $notification
+                ->setBody($message)
+                ->setTitle($title)
+                ->setUrl('http://your-website-url.com/trips')
+                ->setType($type)
+                ->sendPushNotification()
+                ->sendInAppNotification();
         }
     }
 }

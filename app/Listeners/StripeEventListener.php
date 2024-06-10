@@ -9,7 +9,10 @@ use App\Enum\PaymentTypeEnum;
 use App\Enum\TransactionStatusEnum;
 use App\Enum\TransactionTypeEnum;
 use App\Enum\TripStatusEnum;
+use App\Enum\TripTransactionTypeEnum;
+use App\Enum\UserStatusEnum;
 use App\Models\TripTransaction;
+use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Repositories\Core\CardRepository;
 use App\Repositories\Core\TransactionRepository;
@@ -124,11 +127,14 @@ class StripeEventListener
 
                     if ($trip) {
 
-                        $trip->update([
-                            'status' => TripStatusEnum::CANCELED->value
-                        ]);
+                        if ($trip->status == TripStatusEnum::PENDING->value) {
+                            $trip->update([
+                                'status' => TripStatusEnum::CANCELED->value
+                            ]);
+                        }
 
                         $trip_transaction = TripTransaction::where('trip_id', $trip->id)->first();
+                        $user = User::find($trip_transaction->user_id);
 
                         if ($trip_transaction) {
                             $trip_transaction->update([
@@ -141,18 +147,34 @@ class StripeEventListener
                                     'status' => TransactionStatusEnum::FAILED->value
                                 ]);
                             }
+
+                            $notification = new NotificationService($user);
+
+                            $notification
+                                ->setBody("Transaction failed, we could not process your payment, please contact admin")
+                                ->setTitle('We could not process your payment')
+                                ->setUrl('http://google.com')
+                                ->setType(NotificationTypeEnum::WALLET_FUND)
+                                ->sendPushNotification()
+                                ->sendInAppNotification();
+
+                            if ($trip_transaction->type == TripTransactionTypeEnum::EXTRA_TIME) {
+                                if ($user) {
+                                    $user->status = UserStatusEnum::SUSPENDED->value;
+                                    $user->save();
+                                }
+
+                                $notification = new NotificationService($user);
+
+                                $notification
+                                    ->setBody("Your account has been suspended please contact admin for further enquiry")
+                                    ->setTitle('Account suspended')
+                                    ->setUrl('http://google.com')
+                                    ->setType(NotificationTypeEnum::WALLET_FUND)
+                                    ->sendPushNotification()
+                                    ->sendInAppNotification();
+                            }
                         }
-
-
-                        $notification = new NotificationService($user);
-
-                        $notification
-                            ->setBody("Transaction failed, your trip has canceled")
-                            ->setTitle('Trip canceled')
-                            ->setUrl('http://google.com')
-                            ->setType(NotificationTypeEnum::WALLET_FUND)
-                            ->sendPushNotification()
-                            ->sendInAppNotification();
                     }
                 } catch (\Throwable $th) {
                     logError("Error occurred @ Trip funding failed webhook", [

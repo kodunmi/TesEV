@@ -4,6 +4,7 @@ namespace App\Services\Core;
 
 
 use App\Actions\Notifications\NotificationService;
+use App\Enum\PaymentTypeEnum;
 use App\Enum\SubscriptionPaymentFrequencyEnum;
 use App\Enum\TransactionStatusEnum;
 use App\Enum\TransactionTypeEnum;
@@ -15,6 +16,7 @@ use App\Repositories\Core\PackageRepository;
 use App\Repositories\Core\TransactionRepository;
 use App\Repositories\User\UserRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Number;
 
 class SubscriptionService
 {
@@ -81,6 +83,51 @@ class SubscriptionService
                 $product->stripe_id,
                 $package->stripe_id
             )->create($user->activeCard->stripe_id);
+
+            $payment = SubscriptionTransaction::create([
+                'user_id' => $user->id,
+                'package_id' => $package->id,
+                'reference' => generateReference(),
+                'public_id' => uuid(),
+            ]);
+
+            $transaction_one = $this->transactionRepository->create(
+                [
+                    'user_id' => $user->id,
+                    'amount' => $package->amount,
+                    'total_amount' => $package->amount,
+                    'title' => "Payment for trip",
+                    'narration' => "Payment of " . Number::currency(centToDollar($package->amount))  . " for subscription ",
+                    'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                    'type' => TransactionTypeEnum::SUBSCRIPTION->value,
+                    'entry' => "debit",
+                    'channel' => PaymentTypeEnum::CARD->value,
+                    'tax_amount' => 0.0,
+                    'tax_percentage' => 0
+                ]
+            );
+
+            $transaction_two = $this->transactionRepository->create(
+                [
+                    'user_id' => $user->id,
+                    'amount' => $package->amount,
+                    'total_amount' => $package->amount,
+                    'title' => "Subscription hour received",
+                    'narration' => "Receipt of $package->hours for subscription time for $package->frequency",
+                    'status' => TransactionStatusEnum::SUCCESSFUL->value,
+                    'type' => TransactionTypeEnum::SUBSCRIPTION->value,
+                    'entry' => "credit",
+                    'channel' => PaymentTypeEnum::SUBSCRIPTION->value,
+                    'tax_amount' => 0.0,
+                    'tax_percentage' => 0
+                ]
+            );
+
+            $payment->transactions()->saveMany([
+                $transaction_one,
+                $transaction_two
+            ]);
+
 
             $user->refresh();
             return [
