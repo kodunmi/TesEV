@@ -54,7 +54,7 @@ class UserAuthService
 
         if ($user || !Hash::check($credentials['password'], $user->password)) {
 
-            $token = $user->createToken('authToken')->plainTextToken;
+            $token = $user->createToken('access-token')->plainTextToken;
 
             return [
                 'status' => true,
@@ -275,6 +275,8 @@ class UserAuthService
                 'code' => 422
             ];
         }
+
+        $token->delete();
 
         return [
             'message' => '',
