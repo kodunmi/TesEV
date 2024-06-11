@@ -105,10 +105,9 @@ Route::prefix('/notifications')->group(function () {
 Route::prefix('account')->group(function () {
     Route::prefix('profile')->group(function () {
         Route::get('/', [AccountController::class, 'getProfile']);
-        Route::put('/update', [AccountController::class, 'updateProfile']);
-
-        Route::prefix('image')->group(function () {
-            Route::put('/update', [AccountController::class, 'updateProfileImage']);
+        Route::prefix('update')->group(function () {
+            Route::put('/', [AccountController::class, 'updateProfile']);
+            Route::put('/image', [AccountController::class, 'updateProfileImage']);
         });
     });
 

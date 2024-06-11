@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Services\CoreServices;
+namespace App\Services\Core;
+
 
 use App\Repositories\Core\NotificationRepository;
 use Illuminate\Pagination\LengthAwarePaginator;

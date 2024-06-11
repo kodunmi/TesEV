@@ -92,9 +92,9 @@ class User extends Authenticatable
         return $this->hasMany(Trip::class);
     }
 
-    public function photo(): BelongsTo
+    public function photo(): HasOne
     {
-        return $this->belongsTo(File::class, 'owner_id');
+        return $this->hasOne(File::class, 'owner_id');
     }
 
     public function reports()

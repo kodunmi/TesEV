@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\UpdateProfileImageRequest;
 use App\Http\Requests\User\UpdateProfileRequest;
 use App\Http\Resources\User\UserResource;
 use App\Services\User\UserAuthService;
@@ -29,6 +30,19 @@ class AccountController extends Controller
         $data = $request->validated();
         $user_id = auth()->id();
         $updated = $this->userService->updateProfile($user_id, $data);
+
+        if ($updated['status']) {
+            return respondSuccess($updated['message'], $updated['data']);
+        }
+
+        return respondError($updated['message']);
+    }
+
+    public function updateProfileImage(UpdateProfileImageRequest $request)
+    {
+        $data = (object) $request->validated();
+        $user_id = auth()->id();
+        $updated = $this->userService->updateProfileImage($user_id, $data->image);
 
         if ($updated['status']) {
             return respondSuccess($updated['message'], $updated['data']);

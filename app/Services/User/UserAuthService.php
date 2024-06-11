@@ -4,6 +4,7 @@ namespace App\Services\User;
 
 use App\Actions\Notifications\NotificationService;
 use App\Actions\Payment\StripeService;
+use App\Http\Resources\User\UserResource;
 use App\Models\User;
 use App\Repositories\Core\TokenRepository;
 use App\Repositories\User\UserRepository;
@@ -59,7 +60,7 @@ class UserAuthService
                 'status' => true,
                 'message' => 'Login successful',
                 'data' => [
-                    "user" => $user,
+                    "user" => new UserResource($user),
                     "token" => $token
                 ]
             ];

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\General\Notification\CreateNotificationRequest;
 use App\Http\Resources\Core\NotificationResource;
 use App\Repositories\Core\NotificationRepository;
-use App\Services\CoreServices\NotificationService;
+use App\Services\Core\NotificationService;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -21,7 +21,7 @@ class NotificationController extends Controller
     public function getAllNotifications(Request $request)
     {
         $per_page = $request->query('perPage', 10);
-        $owner_id = auth()->user()->activeSchool->id;
+        $owner_id = auth()->id();
         $notifications = $this->notificationService->getAllNotifications($owner_id, $per_page);
 
         return respondSuccess('notifications fetched successful ', paginateResource($notifications, NotificationResource::class));
@@ -32,7 +32,7 @@ class NotificationController extends Controller
      */
     public function getNotificationCounts()
     {
-        $owner_id = auth()->user()->activeSchool->id;
+        $owner_id = auth()->id();
 
         return respondSuccess('notification count fetched successful ', $this->notificationService->getNotificationCounts($owner_id));
     }
@@ -109,7 +109,7 @@ class NotificationController extends Controller
      */
     public function markAllNotificationsAsRead()
     {
-        $owner_id = auth()->user()->activeSchool->id;
+        $owner_id = auth()->id();
         $updated = $this->notificationService->markAllAsRead($owner_id);
 
         if (!$updated) {
@@ -148,7 +148,7 @@ class NotificationController extends Controller
      */
     public function deleteAllNotifications()
     {
-        $owner_id = auth()->user()->activeSchool->id;
+        $owner_id = auth()->id();
         $deleted = $this->notificationService->deleteAll($owner_id);
 
         if (!$deleted) {
