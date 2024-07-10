@@ -54,7 +54,7 @@ class UserAuthService
 
         if ($user || !Hash::check($credentials['password'], $user->password)) {
 
-            $token = $user->createToken('access-token')->plainTextToken;
+            $token = $user->createToken('access-token', ['role:user'])->plainTextToken;
 
             return [
                 'status' => true,

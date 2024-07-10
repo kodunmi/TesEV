@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Resources\User;
+namespace App\Http\Resources\Core;
 
-use App\Http\Resources\Core\PackageResource;
+use App\Http\Resources\User\UserResource;
 use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class UserSubscriptionResource extends JsonResource
+class SubscriptionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,6 +16,7 @@ class UserSubscriptionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         $data =  [
             'id' => $this->id,
             'user' => new UserResource($this->owner),

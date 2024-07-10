@@ -431,4 +431,56 @@ if (!function_exists('updateTripStatus')) {
                 ->sendInAppNotification();
         }
     }
+
+    // if (!function_exists('camelToSnake')) {
+    //     function camelToSnake($input)
+    //     {
+    //         if (is_array($input)) {
+    //             $newArray = [];
+    //             foreach ($input as $key => $value) {
+    //                 $newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
+    //                 $newArray[$newKey] = is_array($value) ? camelToSnake($value) : $value;
+    //             }
+    //             return $newArray;
+    //         } elseif (is_string($input)) {
+    //             $snakeCase = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $input));
+    //             return strtolower($snakeCase);
+    //         }
+    //         return $input;
+    //     }
+    // }
+
+
+    if (!function_exists('camelToSnake')) {
+        function camelToSnake($input)
+        {
+            if (is_null($input)) {
+                return $input;
+            }
+
+            if (is_array($input)) {
+                $newArray = [];
+                foreach ($input as $key => $value) {
+                    $newKey = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $key));
+                    $newArray[$newKey] = is_null($value) ? null : (is_array($value) ? camelToSnake($value) : $value);
+                }
+                return $newArray;
+            } elseif (is_string($input)) {
+                // Check if the input is all lowercase or all uppercase
+                if (ctype_lower($input) || ctype_upper($input)) {
+                    return strtolower($input);
+                }
+                $snakeCase = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $input));
+                return strtolower($snakeCase);
+            }
+            return $input;
+        }
+    }
+
+    if (!function_exists('convertNullString')) {
+        function convertNullString($value)
+        {
+            return $value === "null" ? null : $value;
+        };
+    }
 }

@@ -7,9 +7,9 @@ use App\Models\Trip;
 
 class TripRepository implements TripRepositoryInterface
 {
-    public function all()
+    public function all($per_page = 10)
     {
-        return Trip::paginate(10);
+        return Trip::paginate($per_page);
     }
 
     public function findById(string $id): ?Trip

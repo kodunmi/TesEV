@@ -16,6 +16,7 @@ use App\Http\Requests\User\CreateTripRequest;
 use App\Http\Requests\User\EndTripRequest;
 use App\Http\Requests\User\ReportTripRequest;
 use App\Http\Resources\Core\MultiTripResource;
+use App\Http\Resources\Core\PaginateResource;
 use App\Http\Resources\Core\TripResource;
 use App\Jobs\Core\Trip\ProcessExtraTimePaymentJob;
 use App\Models\TripMetaData;
@@ -49,7 +50,7 @@ class TripController extends Controller
 
         $trips = $this->tripRepository->query()->where('user_id', auth()->id())->whereIn('status', transformStringToArray($status))->paginate(10);
 
-        return respondSuccess('Trips fetched successfully', MultiTripResource::collection($trips));
+        return respondSuccess('Trips fetched successfully', PaginateResource($trips, MultiTripResource::class));
     }
 
 

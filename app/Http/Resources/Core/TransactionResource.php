@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Core;
 
+use App\Http\Resources\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,7 +32,8 @@ class TransactionResource extends JsonResource
             "tax_percentage" => $this->tax_percentage,
             "transaction_date" => $this->transaction_date,
             "created_at" => $this->created_at,
-            "updated_at" => $this->updated_at
+            "updated_at" => $this->updated_at,
+            "user" => new UserResource($this->user),
         ];
     }
 }

@@ -1,19 +1,20 @@
 <?php
 
-namespace App\Http\Requests\V1\General\Notification;
+namespace App\Http\Requests\Admin\Building;
 
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Contracts\Validation\Validator;
 
-class CreateNotificationRequest extends FormRequest
+
+class AddBuildingRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return config('services.controls.allow_app_access');
+        return true;
     }
 
     /**
@@ -24,17 +25,19 @@ class CreateNotificationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string'],
-            'body' => ['required', 'string'],
-            'preview' => ['required', 'string'],
-            'markup_body' => ['nullable', 'string'],
-            'type' => ['nullable'],
+            'name' => 'required|string|max:255',
+            'code' => 'required|integer|unique:buildings,code',
+            'address' => 'required|string|max:255',
+            'opening_time' => 'required|date_format:H:i',
+            'closing_time' => 'required|date_format:H:i',
+            'status' => 'required|string|in:active,inactive',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }
 
     protected function failedValidation(Validator $validator)
     {
-        $message = 'There are issues in your input';
+        $message = 'Invalid input entered';
         $errors = (new ValidationException($validator))->errors();
 
         return respondValidationError($message, $errors);

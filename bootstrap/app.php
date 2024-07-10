@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\UserMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,11 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function () {
 
             // user closed route
-            Route::middleware(['api', 'auth:sanctum'])
+            Route::middleware(['api', 'auth:sanctum', UserMiddleware::class])
                 ->prefix('api/v1/user')
                 ->group(base_path('routes/api/v1/user/index.php'));
 
-            Route::middleware(['api', 'auth:sanctum'])
+            Route::middleware(['api', 'auth:sanctum', AdminMiddleware::class])
                 ->prefix('api/v1/admin')
                 ->group(base_path('routes/api/v1/admin/index.php'));
 

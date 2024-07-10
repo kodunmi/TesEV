@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary(); // Change id column to UUID and set it as the primary key
             $table->string('name')->nullable();
             $table->string('color')->nullable();
-            $table->string('status')->nullable();
+            $table->string('status')->nullable(); //enabled disabled
             $table->decimal('price_per_hour', 10, 2)->nullable();
             $table->string('image')->nullable();
             $table->string('plate_number')->nullable();

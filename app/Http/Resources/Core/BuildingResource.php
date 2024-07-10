@@ -22,7 +22,7 @@ class BuildingResource extends JsonResource
             'opening_time' => $this->opening_time,
             'closing_time' => $this->closing_time,
             'status' => $this->status,
-            'image' => $this->image,
+            'image' => $this->buildingImage?->url,
             'vehicle_count' => $this->vehicles()->count(),
         ];
     }

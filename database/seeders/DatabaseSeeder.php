@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PackageSeeder::class,
             GeneralSeeder::class,
-            TripSettingSeeder::class
+            TripSettingSeeder::class,
+            AdminSeeder::class
         ]);
     }
 }

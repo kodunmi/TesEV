@@ -38,7 +38,8 @@ class User extends Authenticatable
         'email_verified_at',
         'wallet',
         'subscription_balance',
-        'fcm_token'
+        'fcm_token',
+        'status'
     ];
 
     /**
@@ -84,7 +85,7 @@ class User extends Authenticatable
 
     public function buildings(): BelongsToMany
     {
-        return $this->belongsToMany(Building::class)->using(BuildingUser::class)->withPivot(['status']);
+        return $this->belongsToMany(Building::class)->using(BuildingUser::class)->withPivot(['status', 'date_approved', 'date_added']);
     }
 
     public function trips(): HasMany

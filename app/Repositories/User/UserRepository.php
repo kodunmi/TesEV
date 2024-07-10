@@ -94,4 +94,9 @@ class UserRepository implements UserInterface
             return false;
         }
     }
+
+    public function query()
+    {
+        return User::query();
+    }
 }

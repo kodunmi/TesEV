@@ -102,6 +102,10 @@ class CloudService
                 'code' => 200,
             ];
         } catch (\Exception $e) {
+            logError($e->getMessage(), [
+                'location' => 'upload file'
+            ]);
+
             return [
                 'status' => false,
                 'message' => $e->getMessage(),
