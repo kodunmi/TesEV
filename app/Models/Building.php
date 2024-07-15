@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Building extends Model
@@ -51,5 +52,16 @@ class Building extends Model
     public function vehicles(): HasMany
     {
         return $this->hasMany(Vehicle::class);
+    }
+
+    public function trips()
+    {
+        return $this->hasManyThrough(Trip::class, Vehicle::class);
+    }
+
+
+    public function buildingImage(): HasOne
+    {
+        return $this->hasOne(File::class, 'owner_id');
     }
 }

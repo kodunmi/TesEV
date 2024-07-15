@@ -23,12 +23,29 @@ class BuildingRepository implements BuildingRepositoryInterface
         return $query->paginate(10);
     }
 
+    public function allWithoutPag($search = null)
+    {
+        $query = Building::query();
+
+        if ($search) {
+            $query->where(function ($subQuery) use ($search) {
+                $subQuery->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('address', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('code', 'like', '%' . $search . '%');
+            });
+        }
+
+        return $query->get();
+    }
+
     public function create(array $data): Building
     {
+        print_r($data);
         $building = new Building();
 
         $building->public_id = uuid(); // Generating a UUID for the public identifier
-        $building->code = generateCode(6);
+        $building->code = generateRandomNumber(6);
         $building->name = $data['name'] ?? null;
         $building->address = $data['address'] ?? null;
         $building->opening_time = $data['opening_time'] ?? null;
@@ -51,6 +68,8 @@ class BuildingRepository implements BuildingRepositoryInterface
         $building->security_level = $data['security_level'] ?? null;
         $building->insurance_policy_number = $data['insurance_policy_number'] ?? null;
         $building->last_inspection_date = $data['last_inspection_date'] ?? null;
+
+        print_r($building);
 
         $building->save();
 
@@ -104,5 +123,16 @@ class BuildingRepository implements BuildingRepositoryInterface
     public function findById($id): ?Building
     {
         return Building::find($id);
+    }
+
+    public function toggleById($id): ?Building
+    {
+        $building = $this->findById($id);
+
+        $building->status = $building->status == 'active' ?  'inactive' : 'active';
+
+        $building->save();
+
+        return $building;
     }
 }

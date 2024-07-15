@@ -35,9 +35,7 @@ class AdminAuthService
 
         if ($admin || !Hash::check($credentials['password'], $admin->password)) {
 
-            $token = $admin->createToken('adminAuthToken', [
-                $admin->role
-            ])->plainTextToken;
+            $token = $admin->createToken('access-token', ['role:admin'])->plainTextToken;
 
             return [
                 'status' => true,

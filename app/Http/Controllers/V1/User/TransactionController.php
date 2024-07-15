@@ -15,11 +15,20 @@ class TransactionController extends Controller
     {
     }
 
-    public function getAllTransactions()
+    public function getAllTransactions(Request $request)
     {
+
+        $query = Transaction::query();
+
         $user_id = auth()->id();
 
-        $transactions = Transaction::where('user_id', $user_id)->paginate(10);
+        $type = $request->query('type');
+
+        $query->when($type, function ($q) use ($type) {
+            return $q->where('type', $type);
+        });
+
+        $transactions = $query->where('user_id', $user_id)->paginate(10);
 
         return respondSuccess('transactions fetched successfully', paginateResource($transactions, TransactionResource::class));
     }
@@ -27,6 +36,8 @@ class TransactionController extends Controller
     public function getTransaction($transaction_id)
     {
         $transaction = Transaction::find($transaction_id);
+
+
 
         return respondSuccess('transaction fetched successfully', new SingleTransactionResource($transaction));
     }
