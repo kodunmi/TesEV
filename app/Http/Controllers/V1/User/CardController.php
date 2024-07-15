@@ -120,4 +120,29 @@ class CardController extends Controller
 
         return respondSuccess('Default card fetched successfully', $card);
     }
+
+    public function setDefaultCard($card_id)
+    {
+        try {
+            $user = $this->userRepository->findById(auth()->id());
+
+            $card = $user->cards()->find($card_id);
+
+            if (!$card) {
+                return respondError('Card not found', null, 404);
+            }
+
+            $default_card = $user->cards()->where('is_default', true)->first();
+
+            $default_card->is_default = false;
+            $default_card->save();
+
+            $card->is_default = true;
+            $card->save();
+
+            return respondSuccess('Default card set successfully', $card);
+        } catch (\Throwable $th) {
+            return respondError('We cannot set card as default', null, 400);
+        }
+    }
 }

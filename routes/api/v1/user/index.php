@@ -67,6 +67,7 @@ Route::prefix('cards')->controller(CardController::class)->group(function () {
     Route::post('/', 'addCard');
     Route::get('/', 'getCards');
     Route::get('/default', 'getDefaultCard');
+    Route::post('/{card_id}/default', 'setDefaultCard');
 });
 
 
