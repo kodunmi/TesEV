@@ -23,7 +23,9 @@ class Compliance extends Model
         'license_number',
         'expiration_date',
         'user_id',
-        'active'
+        'active',
+        'license_verified',
+        'license_verified_at'
     ];
 
     public function user(): BelongsTo
@@ -34,5 +36,18 @@ class Compliance extends Model
     public function files(): HasMany
     {
         return $this->hasMany(File::class, 'owner_id');
+    }
+
+    public function driverLicenseFront()
+    {
+        return $this->hasOne(File::class, 'owner_id')->where('type', 'driver_license_front');
+    }
+    public function driverLicenseBack()
+    {
+        return $this->hasOne(File::class, 'owner_id')->where('type', 'driver_license_back');
+    }
+    public function photo()
+    {
+        return $this->hasOne(File::class, 'owner_id')->where('type', 'photo');
     }
 }

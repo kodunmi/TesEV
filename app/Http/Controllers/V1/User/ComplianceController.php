@@ -14,8 +14,7 @@ class ComplianceController extends Controller
         protected UserService $userService,
         protected CloudService $cloudService,
         protected ComplianceRepository $complianceRepository
-    ) {
-    }
+    ) {}
 
     public function completeCompliance(UploadComplianceRequest $request)
     {
@@ -24,9 +23,9 @@ class ComplianceController extends Controller
         $response = $this->userService->completeRegistration($validated);
 
         if (!$response['status']) {
-            return respondError($response['message']);
+            return respondError($response['message'], $response['data']);
         }
 
-        return respondSuccess($response['message']);
+        return respondSuccess($response['message'], $response['data']);
     }
 }

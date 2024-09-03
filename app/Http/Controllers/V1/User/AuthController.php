@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function __construct(protected UserAuthService $userAuthService)
-    {
-    }
+    public function __construct(protected UserAuthService $userAuthService) {}
     public function login(LoginRequest $request)
     {
         $validated = (object) $request->validated();
@@ -33,6 +31,9 @@ class AuthController extends Controller
         if ($login['status']) {
             return respondSuccess($login['message'], $login['data']);
         }
+
+
+
 
         return respondError($login['message'], data: null, code: 401);
     }

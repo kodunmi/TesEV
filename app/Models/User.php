@@ -80,7 +80,7 @@ class User extends Authenticatable
 
     public function compliances(): HasMany
     {
-        return $this->hasMany(Compliance::class);
+        return $this->hasMany(Compliance::class, 'user_id');
     }
 
     public function buildings(): BelongsToMany
