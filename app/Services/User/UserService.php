@@ -4,6 +4,8 @@ namespace App\Services\User;
 
 use App\Actions\Cloud\CloudService;
 use App\Enum\CloudTypeEnum;
+use App\Http\Resources\User\UserResource;
+use App\Repositories\Core\FileRepository;
 use App\Repositories\User\ComplianceRepository;
 use App\Repositories\User\UserRepository;
 use Illuminate\Support\Carbon;
@@ -17,6 +19,7 @@ class UserService
         protected CloudService $cloudService,
         protected ComplianceRepository $complianceRepository,
         protected UserRepository $userRepository,
+        protected FileRepository $fileRepository
     ) {}
 
     public function completeRegistration($validated)
@@ -129,6 +132,8 @@ class UserService
             ];
         }
 
+
+
         return [
             'status' => true,
             'message' => 'Profile updated successfully',
@@ -138,6 +143,13 @@ class UserService
 
     public function updateProfileImage($user_id, $image)
     {
+
+        $previous_image = $this->fileRepository->query()
+            ->where('owner_id', $user_id)
+            ->where('type', 'profile_image')
+            ->latest()
+            ->first();
+
 
         $file_upload = $this->cloudService->upload(
             file: $image,
@@ -156,10 +168,20 @@ class UserService
                 'data' => null
             ];
         }
+
+        if ($previous_image) {
+            $delete_status = $this->cloudService->remove($previous_image->id);
+
+            if (!$delete_status['status']) {
+
+                info('Failed to delete previous profile image: ' . $previous_image->id, ['message' => $delete_status['message']]);
+            }
+        }
+
         return [
             'status' => true,
             'message' =>  "Profile image uploaded successfully",
-            'data' => null
+            'data' => new UserResource(Auth::user())
         ];
     }
 

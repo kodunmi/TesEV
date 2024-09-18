@@ -95,7 +95,7 @@ class User extends Authenticatable
 
     public function photo(): HasOne
     {
-        return $this->hasOne(File::class, 'owner_id');
+        return $this->hasOne(File::class, 'owner_id')->latest()->limit(1);
     }
 
     public function reports()
