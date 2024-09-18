@@ -41,8 +41,7 @@ class TripController extends Controller
         protected ReportRepository $reportRepository,
         protected CloudService $cloudService,
         protected TripService $tripService
-    ) {
-    }
+    ) {}
 
     public function getTrips(Request $request)
     {
@@ -52,7 +51,6 @@ class TripController extends Controller
 
         return respondSuccess('Trips fetched successfully', PaginateResource($trips, MultiTripResource::class));
     }
-
 
     public function getTrip($trip_id)
     {
@@ -158,9 +156,7 @@ class TripController extends Controller
         return respondSuccess($response['message'], $response['data']);
     }
 
-    public function payForTrip()
-    {
-    }
+    public function payForTrip() {}
 
     public function reportTrip(ReportTripRequest $request, $trip_id)
     {

@@ -4,6 +4,7 @@ namespace App\Jobs\Core\Trip\Notifications;
 
 use App\Actions\Notifications\NotificationService;
 use App\Enum\NotificationTypeEnum;
+use App\Enum\TripStatusEnum;
 use App\Models\Trip;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -39,7 +40,7 @@ class OnTripNotificationJob implements ShouldQueue
 
         foreach ($intervals as $intervalName => $intervalTime) {
             Trip::where('end_time', $intervalTime)
-                ->where('status', 'active')
+                ->where('status', TripStatusEnum::STARTED->value)
                 ->chunk(100, function ($trips) use ($intervalName) {
                     foreach ($trips as $trip) {
                         $this->notifyUser($trip, $intervalName);

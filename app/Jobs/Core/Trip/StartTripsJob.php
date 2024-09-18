@@ -40,7 +40,7 @@ class StartTripsJob implements ShouldQueue
             ->chunk(100, function ($trips) use ($current_time) {
                 foreach ($trips as $trip) {
                     // Start the trip
-                    $trip->status = 'active';
+                    $trip->status = TripStatusEnum::STARTED->value;
                     $trip->started_at = $current_time;
                     $trip->save();
 
