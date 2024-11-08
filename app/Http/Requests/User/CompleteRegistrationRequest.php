@@ -26,8 +26,8 @@ class CompleteRegistrationRequest extends FormRequest
     {
         return [
             'license_state' => ['required', 'string'],
-            'poster_code' => ['required', 'numeric'],
-            'license_number' => ['required', 'numeric'],
+            'poster_code' => ['required', 'string'],
+            'license_number' => ['required', 'string'],
             'expiration_date' => ['required', 'date'],
         ];
     }

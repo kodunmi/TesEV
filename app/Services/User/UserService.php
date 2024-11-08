@@ -201,6 +201,8 @@ class UserService
 
             if ($response->successful()) {
 
+                logInfo(" identity provider and user data", ['provider' => $body['document'], 'local' => $user]);
+
                 if (
                     Carbon::parse($body['document']['dob'])->format('Y-m-d') !== Carbon::parse($user->date_of_birth)->format('Y-m-d')
                     || strtolower($body['document']['familyName']) !== strtolower($user->last_name)
@@ -219,8 +221,6 @@ class UserService
                     'data' => $response->json()
                 ];
             } else {
-
-
 
                 return [
                     'status' => false,
