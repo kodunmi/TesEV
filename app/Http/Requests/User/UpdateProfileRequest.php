@@ -32,6 +32,7 @@ class UpdateProfileRequest extends FormRequest
             'first_name' => ['nullable', 'string'],
             'last_name' => ['nullable', 'string'],
             'gender' => ['nullable', Rule::in(['male', 'female'])],
+            'date_of_birth' => ['nullable', 'date'],
         ];
     }
 
