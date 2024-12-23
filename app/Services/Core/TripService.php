@@ -44,8 +44,7 @@ class TripService
         protected TripRepository $tripRepository,
         protected TransactionRepository $transactionRepository,
         protected StripeService $stripeService
-    ) {
-    }
+    ) {}
     public function getTripCosting($validated)
     {
         $vehicle = $this->vehicleRepository->findById($validated->vehicle_id);
@@ -329,10 +328,15 @@ class TripService
                             ]
                         );
 
-                        $payment->transactions()->saveMany(
+                        logInfo('error', [
+                            'transaction_one' => $transaction_one,
+                            'transaction_two' => $transaction_two
+                        ]);
+
+                        $payment->transactions()->saveMany([
                             $transaction_one,
                             $transaction_two
-                        );
+                        ]);
 
 
                         $notification = new NotificationService($user);
